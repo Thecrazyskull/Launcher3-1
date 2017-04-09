@@ -6,7 +6,6 @@ import android.os.Bundle;
 
 import com.android.launcher3.AppInfo;
 import com.android.launcher3.Launcher;
-import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.config.FeatureFlags;

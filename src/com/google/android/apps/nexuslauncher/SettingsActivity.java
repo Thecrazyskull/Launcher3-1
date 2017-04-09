@@ -13,11 +13,13 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.preference.TwoStatePreference;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 
 public class SettingsActivity extends com.android.launcher3.SettingsActivity implements PreferenceFragment.OnPreferenceStartFragmentCallback {
     public final static String ICON_PACK_PREF = "pref_icon_pack";
@@ -93,12 +95,15 @@ public class SettingsActivity extends com.android.launcher3.SettingsActivity imp
                 return;
             }
 
-            String name = CustomIconUtils.getCurrentPack(mContext);
+            String defaultPack = mContext.getString(R.string.default_iconpack);
+            String iconPack = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                    .getString(Utilities.KEY_ICON_PACK, defaultPack);
+
             try {
-                ApplicationInfo info = mContext.getPackageManager().getApplicationInfo(name, 0);
+                ApplicationInfo info = mContext.getPackageManager().getApplicationInfo(iconPack, 0);
                 preference.setSummary(mContext.getPackageManager().getApplicationLabel(info));
             } catch (PackageManager.NameNotFoundException e) {
-                preference.setSummary(R.string.icon_pack_default);
+                preference.setSummary(defaultPack);
             }
         }
 

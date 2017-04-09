@@ -20,10 +20,12 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.util.AttributeSet;
 import android.widget.TextView;
@@ -31,12 +33,14 @@ import android.widget.TextView;
 import com.android.launcher3.ItemInfo;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
-import com.android.launcher3.graphics.DrawableFactory;
 import com.android.launcher3.util.ComponentKey;
+import com.android.launcher3.ShortcutInfo;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.widget.WidgetsBottomSheet;
 
 public class CustomBottomSheet extends WidgetsBottomSheet {
     private FragmentManager mFragmentManager;
+    private Launcher mLauncher;
 
     public CustomBottomSheet(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -45,13 +49,15 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
     public CustomBottomSheet(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mFragmentManager = Launcher.getLauncher(context).getFragmentManager();
+        mLauncher = Launcher.getLauncher(context);
     }
 
     @Override
     public void populateAndShow(ItemInfo itemInfo) {
         super.populateAndShow(itemInfo);
         ((TextView) findViewById(R.id.title)).setText(itemInfo.title);
-        ((PrefsFragment) mFragmentManager.findFragmentById(R.id.sheet_prefs)).loadForApp(itemInfo);
+        ((PrefsFragment) mFragmentManager.findFragmentById(R.id.sheet_prefs))
+                .loadForApp(this, mLauncher, itemInfo);
     }
 
     @Override
@@ -67,10 +73,14 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
     protected void onWidgetsBound() {
     }
 
+    public void setLauncher(Launcher launcher) {
+        mLauncher = launcher;
+    }
+
     public static class PrefsFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener {
         private final static String PREF_PACK = "pref_app_icon_pack";
         private final static String PREF_HIDE = "pref_app_hide";
-        private SwitchPreference mPrefPack;
+        private Preference mPrefPack;
         private SwitchPreference mPrefHide;
 
         private ComponentKey mKey;
@@ -81,31 +91,46 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
             addPreferencesFromResource(R.xml.app_edit_prefs);
         }
 
-        public void loadForApp(ItemInfo itemInfo) {
+        public void loadForApp(final CustomBottomSheet sheet, final Launcher launcher,
+                               final ItemInfo itemInfo) {
+            Context context = getActivity();
             mKey = new ComponentKey(itemInfo.getTargetComponent(), itemInfo.user);
 
-            mPrefPack = (SwitchPreference) findPreference(PREF_PACK);
+            mPrefPack = findPreference(PREF_PACK);
             mPrefHide = (SwitchPreference) findPreference(PREF_HIDE);
 
-            Context context = getActivity();
-            CustomDrawableFactory factory = (CustomDrawableFactory) DrawableFactory.get(context);
+            PackageManager pm = context.getPackageManager();
 
-            ComponentName componentName = itemInfo.getTargetComponent();
-            boolean enable = factory.packCalendars.containsKey(componentName) || factory.packComponents.containsKey(componentName);
-            mPrefPack.setEnabled(enable);
-            mPrefPack.setChecked(enable && CustomIconProvider.isEnabledForApp(context, mKey));
-            if (enable) {
-                PackageManager pm = context.getPackageManager();
-                try {
-                    mPrefPack.setSummary(pm.getPackageInfo(factory.iconPack, 0).applicationInfo.loadLabel(pm));
-                } catch (PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
+            String defaultPack = context.getString(R.string.default_iconpack);
+            String iconPack = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                    .getString(Utilities.KEY_ICON_PACK, defaultPack);
+
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(iconPack, 0);
+                mPrefPack.setSummary(pm.getApplicationLabel(info));
+            } catch (PackageManager.NameNotFoundException e) {
+                mPrefPack.setSummary(defaultPack);
             }
 
-            mPrefHide.setChecked(CustomAppFilter.isHiddenApp(context, mKey));
+            mPrefPack.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    sheet.close(true);
+                    ComponentName componentName = null;
+                    if (itemInfo instanceof com.android.launcher3.AppInfo) {
+                        componentName = ((com.android.launcher3.AppInfo) itemInfo).componentName;
+                    } else if (itemInfo instanceof ShortcutInfo) {
+                        componentName = ((ShortcutInfo) itemInfo).intent.getComponent();
+                    }
 
-            mPrefPack.setOnPreferenceChangeListener(this);
+                    if (componentName != null) {
+                        launcher.startEdit(itemInfo, componentName);
+                    }
+                    return false;
+                }
+            });
+
+            mPrefHide.setChecked(CustomAppFilter.isHiddenApp(context, mKey));
             mPrefHide.setOnPreferenceChangeListener(this);
         }
 

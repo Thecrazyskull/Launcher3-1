@@ -21,6 +21,7 @@ import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.drawable.Icon;
 import android.os.Looper;
 import android.util.Log;
 
@@ -50,6 +51,7 @@ public class LauncherAppState {
     private final Context mContext;
     private final LauncherModel mModel;
     private final IconCache mIconCache;
+    private final IconsHandler mIconsHandler;
     private final WidgetPreviewLoader mWidgetCache;
     private final InvariantDeviceProfile mInvariantDeviceProfile;
     private final SettingsObserver mNotificationBadgingObserver;
@@ -97,6 +99,7 @@ public class LauncherAppState {
 
         mInvariantDeviceProfile = new InvariantDeviceProfile(mContext);
         mIconCache = new IconCache(mContext, mInvariantDeviceProfile);
+        mIconsHandler = new IconsHandler(mContext);
         mWidgetCache = new WidgetPreviewLoader(mContext, mIconCache);
         mModel = new LauncherModel(this, mIconCache, AppFilter.newInstance(mContext));
 
@@ -162,6 +165,10 @@ public class LauncherAppState {
 
     public IconCache getIconCache() {
         return mIconCache;
+    }
+
+    public IconsHandler getIconsHandler() {
+        return mIconsHandler;
     }
 
     public LauncherModel getModel() {

@@ -1,17 +1,14 @@
 package com.google.android.apps.nexuslauncher;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,28 +16,25 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.launcher3.IconsHandler;
 import com.android.launcher3.InvariantDeviceProfile;
-import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.PreviewWorkspaceActivityBase;
 import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.util.PackageManagerHelper;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Anass on 26-2-2018.
  */
 
 public class CustomIconPreview extends PreviewWorkspaceActivityBase {
-
-    private RecyclerViewAdapter mAdapter;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,13 +67,13 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
             return;
         }
 
-        mAdapter = new RecyclerViewAdapter(this);
+        RecyclerViewAdapter adapter = new RecyclerViewAdapter(this);
 
         RecyclerView view = rootView.findViewById(R.id.recycler_view);
         LinearLayoutManager manager = new LinearLayoutManager(this,
                 LinearLayoutManager.HORIZONTAL, false);
         view.setLayoutManager(manager);
-        view.setAdapter(mAdapter);
+        view.setAdapter(adapter);
     }
 
     private void resetNumRows() {
@@ -99,7 +93,8 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
         RecyclerViewAdapter(Context context) {
             this.context = context;
             pm = context.getPackageManager();
-            HashMap<String, CharSequence> packList = CustomIconUtils.getPackProviders(context);
+            Map<String, IconsHandler.IconPackInfo> packList = LauncherAppState.getInstance(context)
+                    .getIconsHandler().getIconPacks();
             providers = new ArrayList<>(packList.keySet());
             Collections.sort(providers, new Comparator<String>() {
                 @Override
@@ -153,11 +148,14 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
 
             try {
                 String name = providers.get(position);
-                String currentPack = CustomIconUtils.getCurrentPack(context);
+
+                String defaultName = context.getString(R.string.default_iconpack);
+                String currentPack = PreferenceManager.getDefaultSharedPreferences(context)
+                        .getString(Utilities.KEY_ICON_PACK, defaultName);
 
                 // Default icon pack
                 if (position == 0 && name == null) {
-                    boolean selected = TextUtils.isEmpty(currentPack);
+                    boolean selected = defaultName.equals(currentPack);
                     holder.icon.setImageResource(R.drawable.ic_framework);
                     holder.label.setText(R.string.icon_pack_default);
                     holder.label.setSelected(selected);
@@ -211,56 +209,14 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
                             "icon pack");
                     context.startActivity(intent);
                 } else {
-                    final String name = providers.get(position);
-                    new ApplyIconPackTask(context, name).execute();
-                }
-            }
-        }
-    }
+                    String name = providers.get(position);
+                    if (name == null) {
+                        name = context.getString(R.string.default_iconpack);
+                    }
 
-    private static class ApplyIconPackTask extends AsyncTask<Void, Void, Void> {
-        private ProgressDialog dialog;
-        private String iconPack;
-        private WeakReference<Context> contextReference;
-
-        ApplyIconPackTask(Context context, String name) {
-            contextReference = new WeakReference<>(context);
-            iconPack = name;
-        }
-
-        @Override
-        public void onPreExecute() {
-            Context context = contextReference.get();
-            if (context != null) {
-                dialog = new ProgressDialog(context);
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.setMessage(context.getString(R.string.state_loading));
-                dialog.show();
-            }
-        }
-
-        @Override
-        public Void doInBackground(Void... params) {
-            Context context = contextReference.get();
-            if (context != null) {
-                //if (!CustomIconUtils.getCurrentPack(context).equals(iconPack)) {
-                    //CustomIconUtils.applyIconPack(context, iconPack);
-                //}
-            }
-            return null;
-        }
-
-        @Override
-        public void onPostExecute(Void param) {
-            Context context = contextReference.get();
-            if (dialog != null) {
-                dialog.dismiss();
-            }
-
-            if (context != null) {
-                if (context instanceof CustomIconPreview) {
-                    ((CustomIconPreview) context).mAdapter.notifyDataSetChanged();
-                    ((CustomIconPreview) context).setShouldReload(true);
+                    LauncherAppState.getInstance(context).getIconsHandler().switchIconPacks(name);
+                    notifyDataSetChanged();
+                    setShouldReload(true);
                 }
             }
         }

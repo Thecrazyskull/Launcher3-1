@@ -205,6 +205,7 @@
     <style name="GoogleSearchLauncherTheme" parent="@style/LauncherTheme">
         <item name="android:keyboardLayout">@layout/search_container_all_apps_google</item>
     </style>
+
     <style name="GoogleSearchLauncherThemeDark" parent="@style/LauncherThemeDark">
         <item name="android:keyboardLayout">@layout/search_container_all_apps_google</item>
     </style>
@@ -263,5 +264,11 @@
         <item name="workspaceKeyShadowColor">@android:color/transparent</item>
         <item name="isWorkspaceDarkText">true</item>
         <item name="workspaceStatusBarScrim">@null</item>
+    </style>
+
+    <style name="ChooseIconTheme" parent="@android:style/Theme.Material.Light.DarkActionBar">
+        <item name="android:colorPrimary">@color/settings_action_bar_color</item>
+        <item name="android:colorPrimaryDark">@color/settings_status_bar_color</item>
+        <item name="android:colorAccent">@color/launcher_accent_color</item>
     </style>
 </resources>
