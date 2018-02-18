@@ -29,7 +29,6 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -103,12 +102,9 @@ public class CustomIconUtils {
                 DeepShortcutManager shortcutManager = DeepShortcutManager.getInstance(context);
                 LauncherAppsCompat launcherApps = LauncherAppsCompat.getInstance(context);
                 for (UserHandle user : userManagerCompat.getUserProfiles()) {
-                    HashSet<String> pkgsSet = new HashSet<>();
                     for (LauncherActivityInfo info : launcherApps.getActivityList(null, user)) {
-                        pkgsSet.add(info.getComponentName().getPackageName());
-                    }
-                    for (String pkg : pkgsSet) {
-                        reloadIcon(shortcutManager, model, user, pkg);
+                        String pkgName = info.getComponentName().getPackageName();
+                        reloadIcon(shortcutManager, model, user, pkgName);
                     }
                 }
             }

@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug;
 
@@ -26,12 +27,23 @@ public class LauncherRootView extends InsettableFrameLayout {
 
     private View mAlignedView;
 
+    private boolean mShouldConsumeTouches;
+
     public LauncherRootView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         mOpaquePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mOpaquePaint.setColor(Color.BLACK);
         mOpaquePaint.setStyle(Paint.Style.FILL);
+    }
+
+    public void setShouldConsumeTouches(boolean consume) {
+        mShouldConsumeTouches = consume;
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+        return mShouldConsumeTouches || super.onInterceptTouchEvent(event);
     }
 
     @Override

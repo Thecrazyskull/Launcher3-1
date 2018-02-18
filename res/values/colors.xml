@@ -65,4 +65,7 @@
     <color name="qsb_background_drawer_default">#ccffffff</color>
     <color name="qsb_background_drawer_dark">#ebffffff</color>
     <color name="qsb_drawer_text_color">#ff212121</color>
+
+    <color name="preview_colorPrimary">#5e5e5e</color>
+    <color name="preview_actionbar_color">#A65e5e5e</color>
 </resources>

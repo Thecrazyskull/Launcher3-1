@@ -122,7 +122,9 @@ public class ShortcutsItemView extends PopupItemView implements View.OnLongClick
         DragView dv = mLauncher.getWorkspace().beginDragShared(sv.getIconView(),
                 (PopupContainerWithArrow) getParent(), sv.getFinalInfo(),
                 new ShortcutDragPreviewProvider(sv.getIconView(), mIconShift), new DragOptions());
-        dv.animateShift(-mIconShift.x, -mIconShift.y);
+        if (dv != null) {
+            dv.animateShift(-mIconShift.x, -mIconShift.y);
+        }
 
         // TODO: support dragging from within folder without having to close it
         AbstractFloatingView.closeOpenContainer(mLauncher, AbstractFloatingView.TYPE_FOLDER);

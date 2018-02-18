@@ -230,4 +230,38 @@
         <item name="android:textColorPrimary">@color/colorAccent</item>
         <item name="android:colorControlNormal">@color/colorAccent</item>
     </style>
+
+    <!-- Settings style with all launcher custom attributes -->
+    <style name="PreviewWorkspaceTheme" parent="BaseLauncherThemeWithCustomAttrs">
+        <item name="android:colorPrimaryDark">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@color/preview_colorPrimary</item>
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="PreviewWorkspaceThemeDark" parent="PreviewWorkspaceTheme">
+        <item name="android:textColorPrimary">#FFFFFFFF</item>
+        <item name="android:textColorSecondary">#FFFFFFFF</item>
+        <item name="android:textColorTertiary">#CCFFFFFF</item>
+        <item name="android:textColorHint">#A0FFFFFF</item>
+        <item name="android:colorControlHighlight">#A0FFFFFF</item>
+        <item name="android:colorPrimary">#FF333333</item>
+        <item name="allAppsScrimColor">#7A212121</item>
+        <item name="allAppsNavBarScrimColor">#80000000</item>
+        <item name="popupColorPrimary">?android:attr/colorPrimary</item>
+        <item name="popupColorSecondary">#424242</item> <!-- Gray 800 -->
+        <item name="popupColorTertiary">#757575</item> <!-- Gray 600 -->
+        <item name="widgetsTheme">@style/WidgetContainerTheme.Dark</item>
+        <item name="isMainColorDark">true</item>
+    </style>
+
+    <style name="PreviewWorkspaceThemeDarkText" parent="PreviewWorkspaceTheme">
+        <item name="workspaceTextColor">#FF212121</item>
+        <item name="workspaceShadowColor">@android:color/transparent</item>
+        <item name="workspaceAmbientShadowColor">@android:color/transparent</item>
+        <item name="workspaceKeyShadowColor">@android:color/transparent</item>
+        <item name="isWorkspaceDarkText">true</item>
+        <item name="workspaceStatusBarScrim">@null</item>
+    </style>
 </resources>

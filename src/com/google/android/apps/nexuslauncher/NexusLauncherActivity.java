@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import com.android.launcher3.AppInfo;
 import com.android.launcher3.Launcher;
+import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.config.FeatureFlags;
@@ -17,6 +18,7 @@ import java.util.List;
 
 public class NexusLauncherActivity extends Launcher {
     private final static String PREF_IS_RELOAD = "pref_reload_workspace";
+    private static boolean sShouldReload;
     private NexusLauncher mLauncher;
     private boolean mIsReload;
 
@@ -40,7 +42,9 @@ public class NexusLauncherActivity extends Launcher {
     @Override
     public void onStart() {
         super.onStart();
-        if (FeatureFlags.QSB_ON_FIRST_SCREEN != showSmartspace()) {
+        if (FeatureFlags.QSB_ON_FIRST_SCREEN != showSmartspace()
+                || sShouldReload) {
+            sShouldReload = false;
             Utilities.getPrefs(this).edit().putBoolean(PREF_IS_RELOAD, true).apply();
             if (Utilities.ATLEAST_NOUGAT) {
                 recreate();
@@ -62,6 +66,10 @@ public class NexusLauncherActivity extends Launcher {
 
     private boolean showSmartspace() {
         return Utilities.getPrefs(this).getBoolean(SettingsActivity.SMARTSPACE_PREF, true);
+    }
+
+    public void setShouldReload(boolean reload) {
+        sShouldReload = reload;
     }
 
     public void overrideTheme(boolean isDark, boolean supportsDarkText) {

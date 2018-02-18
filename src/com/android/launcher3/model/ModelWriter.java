@@ -118,11 +118,15 @@ public class ModelWriter {
                     "modelItem: " +
                     ((modelItem != null) ? modelItem.toString() : "null") +
                     "Error: ItemInfo passed to checkItemInfo doesn't match original";
-            RuntimeException e = new RuntimeException(msg);
-            if (stackTrace != null) {
-                e.setStackTrace(stackTrace);
+            //HACK!!!!
+            if (item != null && LauncherAppState.getInstance(mContext)
+                    .getInvariantDeviceProfile().numRows == item.spanX) {
+                RuntimeException e = new RuntimeException(msg);
+                if (stackTrace != null) {
+                    e.setStackTrace(stackTrace);
+                }
+                throw e;
             }
-            throw e;
         }
     }
 

@@ -3225,13 +3225,13 @@ public class Launcher extends BaseActivity
         mWorkspace.unlockWallpaperFromDefaultPageOnNextLayout();
     }
 
-    private void bindAddScreens(ArrayList<Long> orderedScreenIds) {
+    protected void bindAddScreens(ArrayList<Long> orderedScreenIds) {
         int count = orderedScreenIds.size();
         for (int i = 0; i < count; i++) {
             long screenId = orderedScreenIds.get(i);
             if (!FeatureFlags.QSB_ON_FIRST_SCREEN || screenId != Workspace.FIRST_SCREEN_ID) {
                 // No need to bind the first screen, as its always bound.
-                mWorkspace.insertNewWorkspaceScreenBeforeEmptyScreen(screenId);
+                getWorkspace().insertNewWorkspaceScreenBeforeEmptyScreen(screenId);
             }
         }
     }
@@ -3397,7 +3397,7 @@ public class Launcher extends BaseActivity
         }
     }
 
-    private View inflateAppWidget(LauncherAppWidgetInfo item) {
+    protected View inflateAppWidget(LauncherAppWidgetInfo item) {
         if (mIsSafeModeEnabled) {
             PendingAppWidgetHostView view =
                     new PendingAppWidgetHostView(this, item, mIconCache, true);

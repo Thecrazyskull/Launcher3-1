@@ -344,4 +344,6 @@
     <string name="icon_shape_rounded_square">Rounded square</string>
     <string name="smartspace_hours_mins">%1$s %2$s</string>
     <string name="action_preferences">@string/smartspace_preferences</string>
+    <string name="icon_pack_default">Default</string>
+    <string name="market">More</string>
 </resources>
