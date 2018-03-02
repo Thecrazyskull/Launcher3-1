@@ -471,10 +471,6 @@ public class IconsHandler {
         return new Pair<>(iconPackNames, iconPackLabels);
     }
 
-    public Map<String, IconPackInfo> getIconPacks() {
-        return mIconPacks;
-    }
-
     private void loadAvailableIconPacks() {
         List<ResolveInfo> launcherActivities = new ArrayList<>();
         mIconPacks.clear();

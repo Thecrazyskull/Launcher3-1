@@ -10,13 +10,13 @@ import android.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.launcher3.IconsHandler;
 import com.android.launcher3.InvariantDeviceProfile;
 import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.PreviewWorkspaceActivityBase;
@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Anass on 26-2-2018.
@@ -38,6 +37,7 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        loadRecyclerView();
     }
 
     @Override
@@ -93,9 +93,9 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
         RecyclerViewAdapter(Context context) {
             this.context = context;
             pm = context.getPackageManager();
-            Map<String, IconsHandler.IconPackInfo> packList = LauncherAppState.getInstance(context)
-                    .getIconsHandler().getIconPacks();
-            providers = new ArrayList<>(packList.keySet());
+            Pair<List<String>, List<String>> iconPacks = LauncherAppState.getInstance(context).getIconsHandler()
+                    .getAllIconPacks();
+            providers = new ArrayList<>(iconPacks.first);
             Collections.sort(providers, new Comparator<String>() {
                 @Override
                 public int compare(String s, String t1) {
