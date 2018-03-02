@@ -330,36 +330,12 @@ public class IconsHandler {
             return null;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (drawable instanceof AdaptiveIconDrawable) {
-                Drawable backgroundDr = ((AdaptiveIconDrawable) drawable).getBackground();
-                Drawable foregroundDr = ((AdaptiveIconDrawable) drawable).getForeground();
-
-                Drawable[] drr = new Drawable[2];
-                drr[0] = backgroundDr;
-                drr[1] = foregroundDr;
-
-                LayerDrawable layerDrawable = new LayerDrawable(drr);
-
-                int width = layerDrawable.getIntrinsicWidth();
-                int height = layerDrawable.getIntrinsicHeight();
-
-                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-
-                Canvas canvas = new Canvas(bitmap);
-
-                layerDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-                layerDrawable.draw(canvas);
-
-                return generateBitmap(bitmap);
-            }
-        }
-
         if (drawable instanceof BitmapDrawable) {
             return generateBitmap(((BitmapDrawable) drawable).getBitmap());
         }
 
-        return null;
+        return generateBitmap(LauncherIcons.createBadgedIconBitmap(drawable,
+                Process.myUserHandle(), mContext, Build.VERSION.SDK_INT));
     }
 
     public void switchIconPacks(String packageName) {
