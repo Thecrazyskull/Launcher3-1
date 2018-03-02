@@ -243,9 +243,9 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
         public Void doInBackground(Void... params) {
             Context context = contextReference.get();
             if (context != null) {
-                if (!CustomIconUtils.getCurrentPack(context).equals(iconPack)) {
-                    CustomIconUtils.applyIconPack(context, iconPack);
-                }
+                //if (!CustomIconUtils.getCurrentPack(context).equals(iconPack)) {
+                    //CustomIconUtils.applyIconPack(context, iconPack);
+                //}
             }
             return null;
         }
