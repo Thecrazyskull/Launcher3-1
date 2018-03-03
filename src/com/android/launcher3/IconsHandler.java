@@ -330,12 +330,7 @@ public class IconsHandler {
             return null;
         }
 
-        if (drawable instanceof BitmapDrawable) {
-            return generateBitmap(((BitmapDrawable) drawable).getBitmap());
-        }
-
-        return generateBitmap(LauncherIcons.createBadgedIconBitmap(drawable,
-                Process.myUserHandle(), mContext, Build.VERSION.SDK_INT));
+        return generateBitmap(LauncherIcons.createIconBitmap(drawable, mContext));
     }
 
     public void switchIconPacks(String packageName) {
@@ -391,9 +386,9 @@ public class IconsHandler {
 
     private Bitmap generateBitmap(Bitmap defaultBitmap) {
         if (mBackImages.isEmpty()) {
-            Drawable d = new BitmapDrawable(defaultBitmap);
+            Drawable d = new BitmapDrawable(mContext.getResources(), defaultBitmap);
             return LauncherIcons.createBadgedIconBitmap(d, Process.myUserHandle(),
-                    mContext, Build.VERSION.SDK_INT);
+                    mContext, Build.VERSION.SDK_INT, true);
         }
 
         Random random = new Random();
