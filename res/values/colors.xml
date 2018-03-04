@@ -68,4 +68,7 @@
 
     <color name="preview_colorPrimary">#5e5e5e</color>
     <color name="preview_actionbar_color">#A65e5e5e</color>
+
+    <color name="icon_edit_dialog_dark_background_color">#494949</color>
+    <color name="icon_edit_dialog_light_background_color">#ffffff</color>
 </resources>
