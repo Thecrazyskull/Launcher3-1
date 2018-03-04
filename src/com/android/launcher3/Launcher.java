@@ -3944,7 +3944,7 @@ public class Launcher extends BaseActivity
 
         final Resources res = getResources();
 
-        final Bitmap appliedIcon = mIconsHandler.getAppliedIconBitmap(this, mIconCache, app, info);
+        final Bitmap appliedIcon = mIconsHandler.getAppliedIconBitmap(mIconCache, app, info);
         mPackageIcon.setImageBitmap(appliedIcon);
 
         final int popupWidth = getResources().getDimensionPixelSize(R.dimen.edit_dialog_min_width);
@@ -3992,7 +3992,8 @@ public class Launcher extends BaseActivity
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            mIconCache.addCustomInfoToDataBase(new BitmapDrawable(res, appliedIcon), info, mEditText.getText());
+                            mIconCache.addCustomInfoToDataBase(
+                                    new BitmapDrawable(res, appliedIcon), info, mEditText.getText());
                             mIconPackDialog.dismiss();
                         }
                 })
@@ -4000,7 +4001,8 @@ public class Launcher extends BaseActivity
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                mIconCache.addCustomInfoToDataBase(mIconsHandler.getResetIconDrawable(Launcher.this, app, info), info, null);
+                                mIconCache.addCustomInfoToDataBase(mIconsHandler
+                                        .getResetIconDrawable(app, info), info, null);
                                 mIconPackDialog.dismiss();
                             }
                 });

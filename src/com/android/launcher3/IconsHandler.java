@@ -24,9 +24,7 @@ import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ResolveInfo;
-import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -34,13 +32,10 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.drawable.AdaptiveIconDrawable;
-import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Process;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -199,36 +194,13 @@ public class IconsHandler {
         return mDrawables;
     }
 
-    Drawable getRoundIcon(Context context,String packageName, int iconDpi) {
-
-        try {
-            Resources resourcesForApplication = mPackageManager.getResourcesForApplication(packageName);
-            AssetManager assets = resourcesForApplication.getAssets();
-            XmlResourceParser parseXml = assets.openXmlResourceParser("AndroidManifest.xml");
-            int eventType;
-            while ((eventType = parseXml.nextToken()) != XmlPullParser.END_DOCUMENT)
-                if (eventType == XmlPullParser.START_TAG && parseXml.getName().equals("application"))
-                    for (int i = 0; i < parseXml.getAttributeCount(); i++)
-                        if (parseXml.getAttributeName(i).equals("roundIcon"))
-                            return resourcesForApplication.getDrawableForDensity(Integer.parseInt(parseXml.getAttributeValue(i).substring(1)), iconDpi, context.getTheme());
-            parseXml.close();
-        }
-        catch (Exception ex) {
-            Log.w("getRoundIcon", ex);
-        }
-        return null;
-    }
-
     Drawable getIconFromHandler(Context context, LauncherActivityInfo info) {
-        if (isDefaultIconPack()) {
-            return getRoundIcon(context, info.getComponentName().getPackageName(), LauncherAppState.getIDP(context).fillResIconDpi);
-        }
-
-        Bitmap bm = getDrawableIconForPackage(info.getComponentName());
-        if (bm == null) {
-            return null;
-        }
-        return new BitmapDrawable(context.getResources(), LauncherIcons.createIconBitmap(bm, context));
+        Drawable icon = new BitmapDrawable(mContext.getResources(),
+                getDrawableIconForPackage(info.getComponentName()));
+        return new BitmapDrawable(context.getResources(), isDefaultIconPack()
+                ? LauncherIcons.createBadgedIconBitmap(
+                        icon, Process.myUserHandle(), mContext, Build.VERSION.SDK_INT)
+                : LauncherIcons.createIconBitmap(icon, context));
     }
 
     private void loadAllDrawables(String packageName) {
@@ -360,27 +332,19 @@ public class IconsHandler {
     }
 
     // Get the first icon pack parsed icon for reset purposes
-    Drawable getResetIconDrawable(Context context, LauncherActivityInfo app, ItemInfo info) {
-        if (isDefaultIconPack()) {
-            Drawable d = getRoundIcon(context, info.getTargetComponent().getPackageName(),
-                    LauncherAppState.getIDP(context).fillResIconDpi);
-            if (d == null) {
-                app.getIcon(LauncherAppState.getIDP(context).fillResIconDpi);
-            }
-        }
-
-        final Drawable icon = new BitmapDrawable(context.getResources(),
+    Drawable getResetIconDrawable(LauncherActivityInfo app, ItemInfo info) {
+        Drawable icon = new BitmapDrawable(mContext.getResources(),
                 getDrawableIconForPackage(info.getTargetComponent()));
-        return new BitmapDrawable(context.getResources(), LauncherIcons.createBadgedIconBitmap(
-                icon, info.user, context, Build.VERSION.SDK_INT));
+        return new BitmapDrawable(mContext.getResources(), LauncherIcons.createBadgedIconBitmap(
+                icon, info.user, mContext, Build.VERSION.SDK_INT));
     }
 
     // Get the applied icon
-    Bitmap getAppliedIconBitmap(Context context, IconCache iconCache, LauncherActivityInfo app,
+    Bitmap getAppliedIconBitmap(IconCache iconCache, LauncherActivityInfo app,
                                 ItemInfo info) {
-        final Drawable defaultIcon = new BitmapDrawable(context.getResources(),
+        final Drawable defaultIcon = new BitmapDrawable(mContext.getResources(),
                 iconCache.getNonNullIcon(iconCache.getCacheEntry(app), info.user));
-        return LauncherIcons.createBadgedIconBitmap(defaultIcon, info.user, context,
+        return LauncherIcons.createBadgedIconBitmap(defaultIcon, info.user, mContext,
                 Build.VERSION.SDK_INT);
     }
 
