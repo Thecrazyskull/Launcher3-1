@@ -210,13 +210,18 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
                     context.startActivity(intent);
                 } else {
                     String name = providers.get(position);
+                    String defaultName = context.getString(R.string.default_iconpack);
                     if (name == null) {
-                        name = context.getString(R.string.default_iconpack);
+                        name = defaultName;
                     }
 
-                    LauncherAppState.getInstance(context).getIconsHandler().switchIconPacks(name);
-                    notifyDataSetChanged();
-                    setShouldReload(true);
+                    String currentPack = PreferenceManager.getDefaultSharedPreferences(context)
+                            .getString(Utilities.KEY_ICON_PACK, defaultName);
+                    if (!currentPack.equals(name)) {
+                        LauncherAppState.getInstance(context).getIconsHandler().switchIconPacks(name);
+                        notifyDataSetChanged();
+                        setShouldReload(true);
+                    }
                 }
             }
         }
