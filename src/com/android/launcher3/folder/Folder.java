@@ -427,7 +427,7 @@ public class Folder extends AbstractFloatingView implements DragSource, View.OnC
         return mInfo;
     }
 
-    void bind(FolderInfo info) {
+    void bind(FolderInfo info, boolean fromPreview) {
         mInfo = info;
         ArrayList<ShortcutInfo> children = info.contents;
         Collections.sort(children, ITEM_POS_COMPARATOR);
@@ -449,7 +449,9 @@ public class Folder extends AbstractFloatingView implements DragSource, View.OnC
             lp.customPosition = true;
             setLayoutParams(lp);
         }
-        centerAboutIcon();
+        if (!fromPreview) {
+            centerAboutIcon();
+        }
 
         mItemsInvalidated = true;
         updateTextViewFocus();

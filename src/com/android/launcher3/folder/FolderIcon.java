@@ -154,7 +154,12 @@ public class FolderIcon extends FrameLayout implements FolderListener {
     }
 
     public static FolderIcon fromXml(int resId, Launcher launcher, ViewGroup group,
-            FolderInfo folderInfo) {
+                                     FolderInfo folderInfo) {
+        return fromXml(resId, launcher, group, folderInfo, false);
+    }
+
+    public static FolderIcon fromXml(int resId, Launcher launcher, ViewGroup group,
+            FolderInfo folderInfo, boolean fromPreview) {
         @SuppressWarnings("all") // suppress dead code warning
         final boolean error = INITIAL_ITEM_ANIMATION_DURATION >= DROP_IN_ANIMATION_DURATION;
         if (error) {
@@ -183,7 +188,7 @@ public class FolderIcon extends FrameLayout implements FolderListener {
         Folder folder = Folder.fromXml(launcher);
         folder.setDragController(launcher.getDragController());
         folder.setFolderIcon(icon);
-        folder.bind(folderInfo);
+        folder.bind(folderInfo, fromPreview);
         icon.setFolder(folder);
         icon.setAccessibilityDelegate(launcher.getAccessibilityDelegate());
 

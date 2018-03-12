@@ -124,7 +124,7 @@ public class PreviewWorkspaceActivityBase extends NexusLauncherActivity {
                 case LauncherSettings.Favorites.ITEM_TYPE_FOLDER: {
                     view = FolderIcon.fromXml(R.layout.folder_icon, this,
                             (ViewGroup) mWorkspace.getChildAt(mWorkspace.getCurrentPage()),
-                            (FolderInfo) item);
+                            (FolderInfo) item, true);
                     break;
                 }
                 case LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET: {
