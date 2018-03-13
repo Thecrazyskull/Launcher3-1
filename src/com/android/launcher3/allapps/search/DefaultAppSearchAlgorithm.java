@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
  */
 public class DefaultAppSearchAlgorithm implements SearchAlgorithm {
 
-    public final static String SEARCH_HIDDEN_APPS = "pref_search_hidden_apps";
     private final static Pattern complementaryGlyphs = Pattern.compile("\\p{M}");
     private final Context mContext;
     private final List<AppInfo> mApps;
@@ -87,9 +86,6 @@ public class DefaultAppSearchAlgorithm implements SearchAlgorithm {
     }
 
     public static List<AppInfo> getApps(Context context, List<AppInfo> defaultApps) {
-        if (!Utilities.getPrefs(context).getBoolean(SEARCH_HIDDEN_APPS, false)) {
-            return defaultApps;
-        }
         final List<AppInfo> apps = new ArrayList<>();
         final IconCache iconCache = LauncherAppState.getInstance(context).getIconCache();
         for (UserHandle user : UserManagerCompat.getInstance(context).getUserProfiles()) {

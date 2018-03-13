@@ -52,7 +52,7 @@ public class CustomAppFilter extends NexusAppFilter {
     }
 
     static boolean isHiddenApp(Context context, ComponentKey key) {
-        return getHiddenApps(context).contains(key.toString()) != CustomIconUtils.isPackProvider(context, key.componentName.getPackageName());
+        return getHiddenApps(context).contains(key.toString());
     }
 
     private static Set<String> getHiddenApps(Context context) {
