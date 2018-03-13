@@ -114,3 +114,15 @@
 -keep class com.google.android.apps.nexuslauncher.CustomDrawableFactory { *; }
 
 -keep class com.google.android.apps.nexuslauncher.CustomAppPredictor { *; }
+
+-keep class com.android.launcher3.ChooseIconActivity { *; }
+
+-keep class com.android.launcher3.CustomIconProvider { *; }
+
+-keep class com.android.launcher3.IconCache { *; }
+
+-keep class com.android.launcher3.IconsHandler { *; }
+
+-keep class com.android.launcher3.IconsSearchUtils { *; }
+
+
