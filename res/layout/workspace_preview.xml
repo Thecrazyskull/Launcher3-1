@@ -13,19 +13,24 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:launcher="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:weightSum="1">
+    android:orientation="vertical">
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/preview_actionbar_color"/>
     <com.android.launcher3.LauncherRootView
         android:id="@+id/launcher"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.85"
-        android:layout_marginTop="10dp">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_above="@+id/recycler_view">
         <com.android.launcher3.Workspace
             android:theme="@style/HomeScreenElementTheme"
             android:id="@+id/workspace"
@@ -49,11 +54,4 @@
             <include layout="@layout/search_container_hotseat" />
         </com.android.launcher3.Hotseat>
     </com.android.launcher3.LauncherRootView>
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.15"
-        android:background="@color/preview_actionbar_color"/>
-</LinearLayout>
+</RelativeLayout>
