@@ -316,7 +316,13 @@ public class LauncherModel extends BroadcastReceiver
     public void onPackageChanged(String packageName, UserHandle user) {
         int op = PackageUpdatedTask.OP_UPDATE;
         enqueueModelUpdateTask(new PackageUpdatedTask(op, user, packageName));
-        LauncherAppState.getInstance(mApp.getContext()).getIconsHandler().switchIconPacks(packageName);
+
+        IconsHandler handler = LauncherAppState.getInstance(mApp.getContext()).getIconsHandler();
+        String currentIconPack = handler.getCurrentIconPackPackageName();
+
+        if (packageName.equals(currentIconPack)) {
+            handler.switchIconPacks(packageName, true);
+        }
     }
 
     @Override
@@ -328,7 +334,8 @@ public class LauncherModel extends BroadcastReceiver
         //switch to default icon pack if the applied one is removed
         if (PreferenceManager.getDefaultSharedPreferences(context).getString(
                 Utilities.KEY_ICON_PACK, defaultIconPack).equals(packageName)) {
-            LauncherAppState.getInstance(mApp.getContext()).getIconsHandler().switchIconPacks(defaultIconPack);
+            LauncherAppState.getInstance(mApp.getContext()).getIconsHandler()
+                    .switchIconPacks(defaultIconPack, false);
         }
     }
 

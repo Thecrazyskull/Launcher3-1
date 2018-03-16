@@ -236,6 +236,10 @@ public class IconsHandler {
         }
     }
 
+    public String getCurrentIconPackPackageName() {
+        return mIconPackPackageName;
+    }
+
     public boolean isDefaultIconPack() {
         return mIconPackPackageName.equalsIgnoreCase(mDefaultIconPack);
     }
@@ -307,8 +311,8 @@ public class IconsHandler {
         return generateBitmap(LauncherIcons.createIconBitmap(drawable, mContext));
     }
 
-    public void switchIconPacks(String packageName) {
-        if (packageName.equals(mIconPackPackageName)) {
+    public void switchIconPacks(String packageName, boolean update) {
+        if (packageName.equals(mIconPackPackageName) && !update) {
             packageName = mDefaultIconPack;
         }
         if (packageName.equals(mDefaultIconPack) || mIconPacks.containsKey(packageName)) {
