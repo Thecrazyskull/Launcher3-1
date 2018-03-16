@@ -105,6 +105,7 @@ import com.android.launcher3.LauncherSettings.Favorites;
 import com.android.launcher3.Workspace.ItemOperator;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
 import com.android.launcher3.allapps.AllAppsContainerView;
+import com.android.launcher3.allapps.AllAppsRecyclerView;
 import com.android.launcher3.allapps.AllAppsTransitionController;
 import com.android.launcher3.anim.AnimationLayerSet;
 import com.android.launcher3.compat.AppWidgetManagerCompat;
@@ -3961,11 +3962,25 @@ public class Launcher extends BaseActivity
         listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+
                 ChooseIconActivity.setItemInfo(info);
                 Intent intent = new Intent(Launcher.this, ChooseIconActivity.class);
                 intent.putExtra("app_package", component.getPackageName());
                 intent.putExtra("app_label", mEditText.getText().toString());
                 intent.putExtra("icon_pack_package", iconPacks.first.get(position));
+
+                if (position == 0) {
+                    List<AppInfo> defaultAppInfos = ((AllAppsRecyclerView) mAppsView
+                            .getTouchDelegateTargetView()).getApps().getApps();
+                    ArrayList<String> currentPackageNames = new ArrayList<>();
+                    for (AppInfo info : defaultAppInfos) {
+                        String pkgName = info.getTargetComponent().getPackageName();
+                        currentPackageNames.add(pkgName);
+                    }
+
+                    intent.putExtra("default_apps_infos", currentPackageNames);
+                }
+
                 Launcher.this.startActivity(intent);
                 mIconPackDialog.dismiss();
             }
@@ -4159,6 +4174,9 @@ public class Launcher extends BaseActivity
         IconPackArrayAdapter(Context context, List<String> items) {
             this.context = context;
             this.items = items;
+
+            // Add default icon pack
+            items.add(0, null);
         }
 
         @Override
@@ -4196,11 +4214,18 @@ public class Launcher extends BaseActivity
 
             try {
                 String name = items.get(position);
-                Drawable appIcon = pm.getApplicationIcon(name);
-                ApplicationInfo info = pm.getApplicationInfo(name, 0);
 
-                holder.icon.setImageDrawable(appIcon);
-                holder.title.setText(pm.getApplicationLabel(info));
+                // Default icon pack
+                if (position == 0 && name == null) {
+                    holder.icon.setImageResource(R.drawable.ic_framework_colored);
+                    holder.title.setText(R.string.icon_pack_default);
+                } else {
+                    Drawable appIcon = pm.getApplicationIcon(name);
+                    ApplicationInfo info = pm.getApplicationInfo(name, 0);
+
+                    holder.icon.setImageDrawable(appIcon);
+                    holder.title.setText(pm.getApplicationLabel(info));
+                }
             } catch (PackageManager.NameNotFoundException e) {
             }
 

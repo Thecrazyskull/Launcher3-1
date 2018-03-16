@@ -59,8 +59,11 @@ public class ChooseIconActivity extends Activity {
 
     private List<String> mAllIcons;
     private List<String> mMatchingIcons;
+    private List<String> mCurrentInstalledApps = new ArrayList<>();
     private GridAdapter mGridAdapter;
     private ActionBar mActionBar;
+
+    private boolean mDefaultIconPack;
 
     private static WeakReference<ItemInfo> sItemInfoReference;
 
@@ -87,12 +90,25 @@ public class ChooseIconActivity extends Activity {
         mCurrentPackageLabel = getIntent().getStringExtra("app_label");
         mIconPackPackageName = getIntent().getStringExtra("icon_pack_package");
 
+
+        // Default icon pack
+        if (mIconPackPackageName == null) {
+            mIconPackPackageName = getString(R.string.default_iconpack);
+
+            mCurrentInstalledApps.add(0, null);
+            mCurrentInstalledApps.addAll(getIntent().getStringArrayListExtra("default_apps_infos"));
+            mDefaultIconPack = true;
+        }
+
         PackageManager packageManager = getPackageManager();
         ApplicationInfo iconPackInfo;
         try {
-            iconPackInfo = packageManager.getApplicationInfo(mIconPackPackageName, 0);
-            mActionBar.setSubtitle(packageManager.getApplicationLabel(iconPackInfo));
-
+            if (mDefaultIconPack) {
+                mActionBar.setSubtitle(mIconPackPackageName);
+            } else {
+                iconPackInfo = packageManager.getApplicationInfo(mIconPackPackageName, 0);
+                mActionBar.setSubtitle(packageManager.getApplicationLabel(iconPackInfo));
+            }
         } catch (final PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -113,7 +129,11 @@ public class ChooseIconActivity extends Activity {
 
         mIconSize = getResources().getDimensionPixelSize(R.dimen.icon_pack_icon_size);
 
-        new LoadIconListTask(this).execute();
+        if (mDefaultIconPack) {
+            setListLoaded();
+        } else {
+            new LoadIconListTask(this).execute();
+        }
     }
 
     public void setIcons(List<String> allIcons, List<String> matchingIcons) {
@@ -154,15 +174,18 @@ public class ChooseIconActivity extends Activity {
         }
 
         private GridAdapter(List<String> allDrawables, List<String> matchingDrawables) {
-            mAllDrawables.add(null);
-            mAllDrawables.addAll(allDrawables);
-            mMatchingDrawables.add(null);
-            mMatchingDrawables.addAll(matchingDrawables);
-            mGridLayout.setSpanSizeLookup(mSpanSizeLookup);
-            mNoMatchingDrawables = matchingDrawables.isEmpty();
-            if (mNoMatchingDrawables) {
-                mMatchingDrawables.clear();
+            if (!mDefaultIconPack) {
+                mAllDrawables.add(null);
+                mAllDrawables.addAll(allDrawables);
+                mMatchingDrawables.add(null);
+                mMatchingDrawables.addAll(matchingDrawables);
+
+                mNoMatchingDrawables = matchingDrawables.isEmpty();
+                if (mNoMatchingDrawables) {
+                    mMatchingDrawables.clear();
+                }
             }
+            mGridLayout.setSpanSizeLookup(mSpanSizeLookup);
         }
 
         @Override
@@ -184,6 +207,13 @@ public class ChooseIconActivity extends Activity {
 
         @Override
         public int getItemViewType(int position) {
+            if (mDefaultIconPack) {
+                if (position == 0 && mCurrentInstalledApps.get(0) == null) {
+                    return TYPE_ALL_HEADER;
+                }
+                return TYPE_ALL_ICONS;
+            }
+
             if (!mNoMatchingDrawables && position < mMatchingDrawables.size() &&
                     mMatchingDrawables.get(position) == null) {
                 return TYPE_MATCHING_HEADER;
@@ -202,7 +232,7 @@ public class ChooseIconActivity extends Activity {
 
         @Override
         public int getItemCount() {
-            return mAllDrawables.size() + 1;
+            return mDefaultIconPack ? mCurrentInstalledApps.size() : (mAllDrawables.size() + 1);
         }
 
         @Override
@@ -234,14 +264,25 @@ public class ChooseIconActivity extends Activity {
                 boolean drawablesMatching = holder.getItemViewType() == TYPE_MATCHING_ICONS;
                 final List<String> drawables = drawablesMatching ?
                         mMatchingDrawables : mAllDrawables;
-                if (position >= drawables.size()) {
+                if (!mDefaultIconPack && position >= drawables.size()) {
                     return;
                 }
                 holder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Drawable icon = mIconsHandler.loadDrawable(
-                                mIconPackPackageName, drawables.get(holder.getAdapterPosition()), true);
+                        Drawable icon = null;
+                        if (mDefaultIconPack) {
+                            String pkgName  = mCurrentInstalledApps.get(position);
+                            PackageManager pm = getPackageManager();
+                            try {
+                                icon = pm.getApplicationIcon(pkgName);
+                            } catch (PackageManager.NameNotFoundException e) {
+                            }
+                        } else {
+                            icon = mIconsHandler.loadDrawable(
+                                    mIconPackPackageName, drawables.get(
+                                            holder.getAdapterPosition()), true);
+                        }
                         if (icon != null) {
                             ItemInfo info = sItemInfoReference.get();
                             if (info != null) {
@@ -252,14 +293,23 @@ public class ChooseIconActivity extends Activity {
                     }
                 });
                 Drawable icon = null;
-                String drawable = drawables.get(position);
-                try {
-                    icon = mIconsHandler.loadDrawable(mIconPackPackageName, drawable, true);
-                    ((ImageView) holder.itemView).setImageDrawable(icon);
-                } catch (OutOfMemoryError e) {
-                    // time for a new device?
-                    e.printStackTrace();
+                if (mDefaultIconPack) {
+                    String pkgName = mCurrentInstalledApps.get(position);
+                    PackageManager pm = getPackageManager();
+                    try {
+                        icon = pm.getApplicationIcon(pkgName);
+                    } catch (PackageManager.NameNotFoundException e) {
+                    }
+                } else {
+                    String drawable = drawables.get(position);
+                    try {
+                        icon = mIconsHandler.loadDrawable(mIconPackPackageName, drawable, true);
+                    } catch (OutOfMemoryError e) {
+                        // time for a new device?
+                        e.printStackTrace();
+                    }
                 }
+                ((ImageView) holder.itemView).setImageDrawable(icon);
             }
         }
 
