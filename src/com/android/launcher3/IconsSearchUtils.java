@@ -17,7 +17,6 @@
 package com.android.launcher3;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -26,13 +25,15 @@ import java.util.List;
 
 class IconsSearchUtils {
 
-    static void filter(String query, List<String> matchingIcons, List<String> allIcons, ChooseIconActivity.GridAdapter mGridAdapter) {
+    static void filter(String query, List<String> matchingIcons, List<String> allIcons,
+                       ChooseIconActivity.GridAdapter gridAdapter) {
 
         //new array list that will hold the filtered data
         List<String> resultsFromAllIcons = new ArrayList<>();
         List<String> resultsFromMatchingIcons = new ArrayList<>();
 
-        Boolean mNoMatchingDrawables = matchingIcons.isEmpty();
+        boolean noMatchingDrawablesList = matchingIcons == null;
+        boolean noMatchingDrawables = noMatchingDrawablesList || matchingIcons.isEmpty();
 
         if (query.isEmpty()) {
 
@@ -42,24 +43,21 @@ class IconsSearchUtils {
 
             resultsFromMatchingIcons.clear();
 
-            if (!mNoMatchingDrawables) {
+            if (!noMatchingDrawables) {
                 resultsFromMatchingIcons.add(null);
                 resultsFromMatchingIcons.addAll(matchingIcons);
             }
 
-            mGridAdapter.filterList(resultsFromAllIcons, resultsFromMatchingIcons);
-
+            gridAdapter.filterList(resultsFromAllIcons, resultsFromMatchingIcons,
+                    noMatchingDrawablesList);
         } else {
 
             resultsFromAllIcons.clear();
             resultsFromMatchingIcons.clear();
 
-            if (mNoMatchingDrawables) {
-
+            if (noMatchingDrawables) {
                 getFilteredResults(allIcons, resultsFromAllIcons, query);
-
             } else {
-
                 resultsFromAllIcons.clear();
                 resultsFromMatchingIcons.clear();
 
@@ -68,18 +66,20 @@ class IconsSearchUtils {
                 getFilteredResults(matchingIcons, resultsFromMatchingIcons, query);
             }
             //calling a method of the adapter class and passing the filtered list
-            mGridAdapter.filterList(resultsFromAllIcons, resultsFromMatchingIcons);
+            gridAdapter.filterList(resultsFromAllIcons, resultsFromMatchingIcons,
+                    noMatchingDrawablesList);
         }
     }
 
     private static void getFilteredResults(List<String> originalList, List<String> filteredResults, String query) {
-
-        Iterator<String> stringIterator = originalList.iterator();
-
         //looping through existing elements
-        while (stringIterator.hasNext()) {
-            String str = stringIterator.next();
-            if (str.contains(query)) filteredResults.add(str);
+        for (String str : originalList) {
+            if (str == null) {
+                continue;
+            }
+            if (str.contains(query)) {
+                filteredResults.add(str);
+            }
         }
     }
 }

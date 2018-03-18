@@ -142,7 +142,7 @@ public class ChooseIconActivity extends Activity {
     }
 
     public void setListLoaded() {
-        mGridAdapter = new GridAdapter(mAllIcons, mMatchingIcons);
+        mGridAdapter = new GridAdapter(mAllIcons, mMatchingIcons, mCurrentInstalledApps);
         mIconsGrid.setAdapter(mGridAdapter);
         mProgressBar.setVisibility(View.GONE);
         mIconsGrid.animate().alpha(1.0f);
@@ -164,16 +164,22 @@ public class ChooseIconActivity extends Activity {
         private boolean mNoMatchingDrawables;
 
         private List<String> mAllDrawables = new ArrayList<>();
+        private List<String> mDefaultAllDrawables = new ArrayList<>();
         private List<String> mMatchingDrawables = new ArrayList<>();
 
-        void filterList(List<String> filteredAllDrawables, List<String> filteredMatchingDrawables) {
-
-            mAllDrawables = filteredAllDrawables;
-            mMatchingDrawables = filteredMatchingDrawables;
+        void filterList(List<String> filteredAllDrawables, List<String> filteredMatchingDrawables,
+                        boolean defaultIconPack) {
+            if (defaultIconPack) {
+                mDefaultAllDrawables = filteredAllDrawables;
+            } else {
+                mAllDrawables = filteredAllDrawables;
+                mMatchingDrawables = filteredMatchingDrawables;
+            }
             notifyDataSetChanged();
         }
 
-        private GridAdapter(List<String> allDrawables, List<String> matchingDrawables) {
+        private GridAdapter(List<String> allDrawables, List<String> matchingDrawables,
+                            List<String> defaultAllDrawables) {
             if (!mDefaultIconPack) {
                 mAllDrawables.add(null);
                 mAllDrawables.addAll(allDrawables);
@@ -184,6 +190,8 @@ public class ChooseIconActivity extends Activity {
                 if (mNoMatchingDrawables) {
                     mMatchingDrawables.clear();
                 }
+            } else {
+                mDefaultAllDrawables.addAll(defaultAllDrawables);
             }
             mGridLayout.setSpanSizeLookup(mSpanSizeLookup);
         }
@@ -232,7 +240,7 @@ public class ChooseIconActivity extends Activity {
 
         @Override
         public int getItemCount() {
-            return mDefaultIconPack ? mCurrentInstalledApps.size() : (mAllDrawables.size() + 1);
+            return mDefaultIconPack ? mDefaultAllDrawables.size() : (mAllDrawables.size() + 1);
         }
 
         @Override
@@ -272,7 +280,7 @@ public class ChooseIconActivity extends Activity {
                     public void onClick(View v) {
                         Drawable icon = null;
                         if (mDefaultIconPack) {
-                            String pkgName  = mCurrentInstalledApps.get(position);
+                            String pkgName  = mDefaultAllDrawables.get(holder.getAdapterPosition());
                             PackageManager pm = getPackageManager();
                             try {
                                 icon = pm.getApplicationIcon(pkgName);
@@ -294,7 +302,7 @@ public class ChooseIconActivity extends Activity {
                 });
                 Drawable icon = null;
                 if (mDefaultIconPack) {
-                    String pkgName = mCurrentInstalledApps.get(position);
+                    String pkgName = mDefaultAllDrawables.get(position);
                     PackageManager pm = getPackageManager();
                     try {
                         icon = pm.getApplicationIcon(pkgName);
@@ -348,14 +356,16 @@ public class ChooseIconActivity extends Activity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-
-                IconsSearchUtils.filter(newText, mMatchingIcons, mAllIcons, mGridAdapter);
+                if (mDefaultIconPack) {
+                    IconsSearchUtils.filter(newText, null, mCurrentInstalledApps, mGridAdapter);
+                } else {
+                    IconsSearchUtils.filter(newText, mMatchingIcons, mAllIcons, mGridAdapter);
+                }
                 return true;
             }
         });
