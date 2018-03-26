@@ -32,15 +32,18 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Process;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.launcher3.graphics.FixedScaleDrawable;
 import com.android.launcher3.graphics.LauncherIcons;
 import com.android.launcher3.graphics.IconNormalizer;
 
@@ -61,6 +64,8 @@ import java.util.Random;
 public class IconsHandler {
 
     private static final String TAG = "IconsHandler";
+    private static final String FRONT = "_front";
+    private static final String BACK = "_back";
 
     private static String[] LAUNCHER_INTENTS = new String[] {
         "com.fede.launcher.THEME_ICONPACK",
@@ -196,13 +201,8 @@ public class IconsHandler {
         return mDrawables;
     }
 
-    Drawable getIconFromHandler(Context context, LauncherActivityInfo info) {
-        Drawable icon = new BitmapDrawable(mContext.getResources(),
-                getDrawableIconForPackage(info.getComponentName()));
-        return new BitmapDrawable(context.getResources(), isDefaultIconPack()
-                ? LauncherIcons.createBadgedIconBitmap(
-                        icon, Process.myUserHandle(), mContext, Build.VERSION.SDK_INT)
-                : LauncherIcons.createIconBitmap(icon, context));
+    Drawable getIconFromHandler(LauncherActivityInfo info) {
+        return getDrawableIconForPackage(info.getComponentName());
     }
 
     private void loadAllDrawables(String packageName) {
@@ -296,7 +296,7 @@ public class IconsHandler {
         return null;
     }
 
-    private Bitmap getDefaultAppDrawable(ComponentName componentName) {
+    private Drawable getDefaultAppDrawable(ComponentName componentName) {
         Drawable drawable = null;
         try {
             drawable = mPackageManager.getApplicationIcon(mPackageManager.getApplicationInfo(
@@ -308,7 +308,7 @@ public class IconsHandler {
             return null;
         }
 
-        return generateBitmap(LauncherIcons.createIconBitmap(drawable, mContext));
+        return generateAdaptiveIcon(componentName, drawable);
     }
 
     public void switchIconPacks(String packageName, boolean update) {
@@ -320,29 +320,36 @@ public class IconsHandler {
         }
     }
 
-    public Bitmap getDrawableIconForPackage(ComponentName componentName) {
-        Bitmap cachedIcon = cacheGetDrawable(componentName.toString());
+    private Drawable getDrawableIconForPackage(ComponentName componentName) {
+        Drawable cachedIcon;
+        if (!mBackImages.isEmpty()) {
+            Drawable cachedIconFront = cacheGetDrawable(componentName.toString(), FRONT);
+            Drawable cachedIconBack = cacheGetDrawable(componentName.toString(), BACK);
+            if (cachedIconFront == null || cachedIconBack == null) {
+                cachedIcon = null;
+            } else {
+                cachedIcon = new AdaptiveIconDrawable(cachedIconBack, cachedIconFront);
+            }
+        } else {
+            cachedIcon = cacheGetDrawable(componentName.toString(), null);
+        }
         if (cachedIcon != null) {
             return cachedIcon;
         }
 
         String drawableName = mAppFilterDrawables.get(componentName.toString());
         Drawable drawable = loadDrawable(null, drawableName, false);
-        if (drawable != null && drawable instanceof BitmapDrawable) {
-            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-            cacheStoreDrawable(componentName.toString(), bitmap);
-            return bitmap;
+        if (drawable != null) {
+            cacheStoreDrawable(componentName.toString(), null, drawable);
+            return drawable;
         }
 
         return getDefaultAppDrawable(componentName);
     }
 
     // Get the first icon pack parsed icon for reset purposes
-    Drawable getResetIconDrawable(LauncherActivityInfo app, ItemInfo info) {
-        Drawable icon = new BitmapDrawable(mContext.getResources(),
-                getDrawableIconForPackage(info.getTargetComponent()));
-        return new BitmapDrawable(mContext.getResources(), LauncherIcons.createBadgedIconBitmap(
-                icon, info.user, mContext, Build.VERSION.SDK_INT));
+    Drawable getResetIconDrawable(ItemInfo info) {
+        return getDrawableIconForPackage(info.getTargetComponent());
     }
 
     // Get the applied icon
@@ -354,25 +361,63 @@ public class IconsHandler {
                 Build.VERSION.SDK_INT);
     }
 
-    private Bitmap generateBitmap(Bitmap defaultBitmap) {
+    private Drawable createAdaptiveIcon(Drawable drawable) {
+        IconNormalizer normalizer = IconNormalizer.getInstance(mContext);
+
+        boolean[] outShape = new boolean[1];
+        AdaptiveIconDrawable dr = (AdaptiveIconDrawable)
+                mContext.getDrawable(R.drawable.adaptive_icon_drawable_wrapper).mutate();
+        dr.setBounds(0, 0, 1, 1);
+        float scale = normalizer.getScale(drawable, null, dr.getIconMask(), outShape);
+        if (!outShape[0]) {
+            return LauncherIcons.wrapToAdaptiveIconDrawable(mContext, drawable, scale);
+        }
+        return null;
+    }
+
+    private Bitmap drawableToBitmap(Drawable drawable) {
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
+                drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
+    private Drawable generateAdaptiveIcon(ComponentName cn, Drawable drawable) {
         if (mBackImages.isEmpty()) {
-            Drawable d = new BitmapDrawable(mContext.getResources(), defaultBitmap);
-            return LauncherIcons.createBadgedIconBitmap(d, Process.myUserHandle(),
-                    mContext, Build.VERSION.SDK_INT, true);
+            // Make sure all icons are adaptive if no back is provided
+            if (!(drawable instanceof AdaptiveIconDrawable)) {
+                Drawable d = createAdaptiveIcon(drawable);
+                if (d != null) {
+                    return d;
+                }
+            }
+            return drawable;
         }
 
+        IconNormalizer normalizer = IconNormalizer.getInstance(mContext);
+
+        // Convert passed icon to bitmap
+        Bitmap defaultBitmap = drawableToBitmap(drawable);
+
+        // Load back image
         Random random = new Random();
         int id = random.nextInt(mBackImages.size());
         Bitmap backImage = mBackImages.get(id);
         int w = backImage.getWidth();
         int h = backImage.getHeight();
 
+        // Create final bitmap
         Bitmap result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(result);
         canvas.drawBitmap(backImage, 0, 0, null);
 
+        // Check if we need a custom factor for transparent back images
         try {
-            IconNormalizer normalizer = IconNormalizer.getInstance(mContext);
             if (!normalizer.isTransparentBitmap(backImage)) {
                 mFactor = 0.7f;
             }
@@ -380,28 +425,47 @@ public class IconsHandler {
             Log.w(TAG, "failed to check if bitmap is transparent", e);
         }
 
+        // Scale the passed icon
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(defaultBitmap,
                 (int) (w * mFactor), (int) (h * mFactor), false);
+        Drawable scaledDrawable = new BitmapDrawable(mContext.getResources(), scaledBitmap);
 
+        // Draw mask image
         Bitmap mutableMask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas maskCanvas = new Canvas(mutableMask);
         Bitmap targetBitmap = mMaskImage == null ? mutableMask : mMaskImage;
         maskCanvas.drawBitmap(targetBitmap, 0, 0, new Paint());
 
+        // Draw the scaled passed icon on top of the back image
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST));
         canvas.drawBitmap(scaledBitmap, (w - scaledBitmap.getWidth()) / 2,
                 (h - scaledBitmap.getHeight()) / 2, null);
         canvas.drawBitmap(mutableMask, 0, 0, paint);
 
+        // Draw front image, if available
         if (mFrontImage != null) {
             canvas.drawBitmap(mFrontImage, 0, 0, null);
         }
-        return result;
+
+        // Create scaled final drawable for adaptive icon use
+        float scale = normalizer.getScale(drawable, null, null, null);
+        FixedScaleDrawable fsd = new FixedScaleDrawable();
+        fsd.setDrawable(scaledDrawable);
+        fsd.setScale(scale);
+
+        // Create the final adaptive icon
+        Drawable backImageDrawable = new BitmapDrawable(mContext.getResources(), backImage);
+        AdaptiveIconDrawable adaptiveIconDrawable = new AdaptiveIconDrawable(backImageDrawable, fsd);
+
+        // Save back & front drawables
+        cacheStoreDrawable(cn.toString(), BACK,  backImageDrawable);
+        cacheStoreDrawable(cn.toString(), FRONT, fsd);
+
+        return adaptiveIconDrawable;
     }
 
     public Pair<List<String>, List<String>> getAllIconPacks() {
-
         //be sure to update the icon packs list
         loadAvailableIconPacks();
 
@@ -435,14 +499,15 @@ public class IconsHandler {
         }
     }
 
-    private boolean isDrawableInCache(String key) {
-        File drawableFile = cacheGetFileName(key);
+    private boolean isDrawableInCache(String key, String secondaryName) {
+        File drawableFile = cacheGetFileName(key, secondaryName);
         return drawableFile.isFile();
     }
 
-    private void cacheStoreDrawable(String key, Bitmap bitmap) {
-        if (isDrawableInCache(key)) return;
-        File drawableFile = cacheGetFileName(key);
+    private void cacheStoreDrawable(String key, String secondaryName, Drawable drawable) {
+        if (isDrawableInCache(key, secondaryName)) return;
+        File drawableFile = cacheGetFileName(key, secondaryName);
+        Bitmap bitmap = drawableToBitmap(drawable);
         try (FileOutputStream fos = new FileOutputStream(drawableFile)) {
             bitmap.compress(CompressFormat.PNG, 100, fos);
             fos.flush();
@@ -452,29 +517,35 @@ public class IconsHandler {
         }
     }
 
-    private Bitmap cacheGetDrawable(String key) {
-        if (!isDrawableInCache(key)) {
+    private Drawable cacheGetDrawable(String key, String secondaryName) {
+        if (!isDrawableInCache(key, secondaryName)) {
             return null;
         }
 
-        try (FileInputStream fis = new FileInputStream(cacheGetFileName(key))) {
+        try (FileInputStream fis = new FileInputStream(cacheGetFileName(key, secondaryName))) {
             BitmapDrawable drawable =
                     new BitmapDrawable(mContext.getResources(), BitmapFactory.decodeStream(fis));
             fis.close();
-            return drawable.getBitmap();
+            return drawable;
         } catch (Exception e) {
             Log.e(TAG, "Unable to get drawable from cache " + e);
         }
-
         return null;
     }
 
-    private File cacheGetFileName(String key) {
-        return new File(getIconsCacheDir() + mIconPackPackageName + "_" + key.hashCode() + ".png");
+    private File cacheGetFileName(String key, String secondaryName) {
+        return new File(getIconsCacheDir() + mIconPackPackageName + "_" + key.hashCode()
+                + (secondaryName == null ? "" : secondaryName) + ".png");
     }
 
     private File getIconsCacheDir() {
-        return new File(mContext.getCacheDir().getPath() + "/icons/");
+        File f = new File(mContext.getCacheDir().getPath() + "/icons/");
+        if (!f.exists()) {
+            if (!f.mkdirs()) {
+                Log.e(TAG, "failed to create icons cache folder");
+            }
+        }
+        return f;
     }
 
     private void clearCache() {

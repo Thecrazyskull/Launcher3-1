@@ -99,12 +99,6 @@ public class LauncherIcons {
      */
     public static Bitmap createBadgedIconBitmap(
             Drawable icon, UserHandle user, Context context, int iconAppTargetSdk) {
-        return createBadgedIconBitmap(icon, user, context, iconAppTargetSdk, false);
-    }
-
-    public static Bitmap createBadgedIconBitmap(
-            Drawable icon, UserHandle user, Context context, int iconAppTargetSdk, boolean forceWrap) {
-
         IconNormalizer normalizer;
         float scale = 1f;
         if (!FeatureFlags.LAUNCHER3_DISABLE_ICON_NORMALIZATION) {
@@ -115,7 +109,7 @@ public class LauncherIcons {
                         context.getDrawable(R.drawable.adaptive_icon_drawable_wrapper).mutate();
                 dr.setBounds(0, 0, 1, 1);
                 scale = normalizer.getScale(icon, null, dr.getIconMask(), outShape);
-                if ((forceWrap || isDefaultIconPack(context) || FeatureFlags.LEGACY_ICON_TREATMENT)
+                if ((FeatureFlags.LEGACY_ICON_TREATMENT)
                         && !outShape[0]){
                     Drawable wrappedIcon = wrapToAdaptiveIconDrawable(context, icon, scale);
                     if (wrappedIcon != icon) {
@@ -300,7 +294,7 @@ public class LauncherIcons {
      * shrink the legacy icon and set it as foreground. Use color drawable as background to
      * create AdaptiveIconDrawable.
      */
-    static Drawable wrapToAdaptiveIconDrawable(Context context, Drawable drawable, float scale) {
+    public static Drawable wrapToAdaptiveIconDrawable(Context context, Drawable drawable, float scale) {
         if (!Utilities.ATLEAST_OREO) {
             return drawable;
         }
@@ -318,10 +312,6 @@ public class LauncherIcons {
             return drawable;
         }
         return drawable;
-    }
-
-    public static boolean isDefaultIconPack(Context context) {
-        return LauncherAppState.getInstance(context).getIconsHandler().isDefaultIconPack();
     }
 
     public static Bitmap createShortcutIcon(ShortcutInfoCompat shortcutInfo, Context context) {

@@ -4019,7 +4019,7 @@ public class Launcher extends BaseActivity
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 mIconCache.addCustomInfoToDataBase(mIconsHandler
-                                        .getResetIconDrawable(app, info), info, null);
+                                        .getResetIconDrawable(info), info, null);
                                 mIconPackDialog.dismiss();
                             }
                 });

@@ -32,7 +32,7 @@ public class CustomIconProvider extends IconProvider {
     @Override
     public Drawable getIcon(LauncherActivityInfo info, int iconDpi, boolean flattenDrawable) {
         Drawable drawable = LauncherAppState.getInstance(mContext)
-                .getIconsHandler().getIconFromHandler(mContext, info);
+                .getIconsHandler().getIconFromHandler(info);
 
         return drawable != null ? drawable : info.getIcon(iconDpi);
     }
