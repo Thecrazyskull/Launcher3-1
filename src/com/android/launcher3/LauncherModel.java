@@ -321,7 +321,7 @@ public class LauncherModel extends BroadcastReceiver
         String currentIconPack = handler.getCurrentIconPackPackageName();
 
         if (packageName.equals(currentIconPack)) {
-            handler.switchIconPacks(packageName, true);
+            handler.notifyUserIconPackChanged();
         }
     }
 
@@ -335,7 +335,7 @@ public class LauncherModel extends BroadcastReceiver
         if (PreferenceManager.getDefaultSharedPreferences(context).getString(
                 Utilities.KEY_ICON_PACK, defaultIconPack).equals(packageName)) {
             LauncherAppState.getInstance(mApp.getContext()).getIconsHandler()
-                    .switchIconPacks(defaultIconPack, false);
+                    .switchIconPacks(defaultIconPack);
         }
     }
 

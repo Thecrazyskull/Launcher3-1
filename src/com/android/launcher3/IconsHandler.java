@@ -42,6 +42,7 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
 
 import com.android.launcher3.compat.LauncherAppsCompat;
 import com.android.launcher3.graphics.FixedScaleDrawable;
@@ -312,8 +313,12 @@ public class IconsHandler {
         return generateAdaptiveIcon(componentName, drawable);
     }
 
-    public void switchIconPacks(String packageName, boolean update) {
-        if (packageName.equals(mIconPackPackageName) && !update) {
+    public void notifyUserIconPackChanged() {
+        Toast.makeText(mContext, R.string.icon_pack_updated, Toast.LENGTH_LONG).show();
+    }
+
+    public void switchIconPacks(String packageName) {
+        if (packageName.equals(mIconPackPackageName)) {
             packageName = mDefaultIconPack;
         }
         if (packageName.equals(mDefaultIconPack) || mIconPacks.containsKey(packageName)) {
