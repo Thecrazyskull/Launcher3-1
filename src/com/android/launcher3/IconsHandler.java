@@ -329,17 +329,14 @@ public class IconsHandler {
     private Drawable getDrawableIconForPackage(ComponentName componentName) {
         Drawable cachedIcon;
 
-        if (!mBackImages.isEmpty()) {
-            Drawable cachedIconFront = cacheGetDrawable(componentName.toString(), FRONT);
-            Drawable cachedIconBack = cacheGetDrawable(componentName.toString(), BACK);
-            if (cachedIconFront == null || cachedIconBack == null) {
-                cachedIcon = null;
-            } else {
-                cachedIcon = new AdaptiveIconDrawable(cachedIconBack, cachedIconFront);
-            }
-        } else {
+        Drawable cachedIconFront = cacheGetDrawable(componentName.toString(), FRONT);
+        Drawable cachedIconBack = cacheGetDrawable(componentName.toString(), BACK);
+        if (cachedIconFront == null || cachedIconBack == null) {
             cachedIcon = cacheGetDrawable(componentName.toString(), null);
+        } else {
+            cachedIcon = new AdaptiveIconDrawable(cachedIconBack, cachedIconFront);
         }
+
         if (cachedIcon != null) {
             return cachedIcon;
         }
@@ -347,7 +344,16 @@ public class IconsHandler {
         String drawableName = mAppFilterDrawables.get(componentName.toString());
         Drawable drawable = loadDrawable(null, drawableName, false);
         if (drawable != null) {
-            cacheStoreDrawable(componentName.toString(), null, drawable);
+            if (drawable instanceof AdaptiveIconDrawable) {
+                Drawable foreground = ((AdaptiveIconDrawable) drawable).getForeground();
+                Drawable background = ((AdaptiveIconDrawable) drawable).getBackground();
+                if (foreground != null && background != null) {
+                    cacheStoreDrawable(componentName.toString(), FRONT, foreground);
+                    cacheStoreDrawable(componentName.toString(), BACK, background);
+                }
+            } else {
+                cacheStoreDrawable(componentName.toString(), null, drawable);
+            }
             return drawable;
         }
 
@@ -386,8 +392,15 @@ public class IconsHandler {
         if (drawable instanceof BitmapDrawable) {
             return ((BitmapDrawable) drawable).getBitmap();
         }
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
-                drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        int w = drawable.getIntrinsicWidth();
+        int h = drawable.getIntrinsicHeight();
+
+        if (w <= 0 || h <= 0) {
+            Log.e(TAG, "drawable width or height invalid. Cannot convert to bitmap");
+            return null;
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.draw(canvas);
@@ -515,12 +528,15 @@ public class IconsHandler {
         if (isDrawableInCache(key, secondaryName)) return;
         File drawableFile = cacheGetFileName(key, secondaryName);
         Bitmap bitmap = drawableToBitmap(drawable);
-        try (FileOutputStream fos = new FileOutputStream(drawableFile)) {
-            bitmap.compress(CompressFormat.PNG, 100, fos);
-            fos.flush();
-            fos.close();
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to store drawable in cache " + e);
+
+        if (bitmap != null) {
+            try (FileOutputStream fos = new FileOutputStream(drawableFile)) {
+                bitmap.compress(CompressFormat.PNG, 100, fos);
+                fos.flush();
+                fos.close();
+            } catch (Exception e) {
+                Log.e(TAG, "Unable to store drawable in cache " + e);
+            }
         }
     }
 

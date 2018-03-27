@@ -39,8 +39,13 @@ public class CustomIconProvider extends IconProvider {
 
         boolean hasCustomIcon = cache.hasCustomIcon(cache.getCacheEntry(info));
         if (hasCustomIcon) {
+            IconCache.CacheEntry entry = cache.getCacheEntry(info);
+            Drawable drawable = cache.getCustomIcon(entry);
+            if (drawable != null) {
+                return drawable;
+            }
             return new BitmapDrawable(mContext.getResources(), cache.getNonNullIcon(
-                    cache.getCacheEntry(info), info.getUser()));
+                    entry, info.getUser()));
         }
 
         Drawable drawable = handler.getIconFromHandler(info);

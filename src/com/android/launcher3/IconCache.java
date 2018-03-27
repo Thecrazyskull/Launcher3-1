@@ -80,6 +80,7 @@ public class IconCache {
 
     public static class CacheEntry {
         public Bitmap icon;
+        public Drawable customIcon;
         public CharSequence title = "";
         public CharSequence contentDescription = "";
         public boolean isLowResIcon;
@@ -378,6 +379,7 @@ public class IconCache {
             entry = new CacheEntry();
         }
         entry.icon = LauncherIcons.createIconBitmap(icon, mContext);
+        entry.customIcon = icon;
         entry.title = title != null ? title : app.getLabel();
         entry.contentDescription = mUserManager.getBadgedLabelForUser(entry.title, app.getUser());
 
@@ -475,6 +477,10 @@ public class IconCache {
 
     Bitmap getNonNullIcon(CacheEntry entry, UserHandle user) {
         return entry.icon == null ? getDefaultIcon(user) : entry.icon;
+    }
+
+    public Drawable getCustomIcon(CacheEntry entry) {
+        return entry == null ? null : entry.customIcon;
     }
 
     public boolean hasCustomIcon(CacheEntry entry) {
