@@ -349,4 +349,6 @@
     <string name="icon_edit">Edit app icon and label</string>
     <string name="market">More</string>
     <string name="icon_pack_updated">Your currently applied icon pack has been updated. It is recommended to go into settings and re-apply the icon pack.</string>
+    <string name="icon_pack_apply_warning_title">Warning</string>
+    <string name="icon_pack_apply_warning_message">Any custom icons or icon labels will disappear. Are you sure you want to continue?</string>
 </resources>

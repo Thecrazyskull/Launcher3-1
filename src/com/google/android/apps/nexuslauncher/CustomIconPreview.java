@@ -1,6 +1,8 @@
 package com.google.android.apps.nexuslauncher;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -34,6 +36,8 @@ import java.util.List;
  */
 
 public class CustomIconPreview extends PreviewWorkspaceActivityBase {
+    private RecyclerViewAdapter mAdapter;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,13 +71,13 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
             return;
         }
 
-        RecyclerViewAdapter adapter = new RecyclerViewAdapter(this);
+        mAdapter = new RecyclerViewAdapter(this);
 
         RecyclerView view = rootView.findViewById(R.id.recycler_view);
         LinearLayoutManager manager = new LinearLayoutManager(this,
                 LinearLayoutManager.HORIZONTAL, false);
         view.setLayoutManager(manager);
-        view.setAdapter(adapter);
+        view.setAdapter(mAdapter);
     }
 
     private void resetNumRows() {
@@ -81,6 +85,40 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
         InvariantDeviceProfile iprofile = LauncherAppState.getInstance(this)
                 .getInvariantDeviceProfile();
         iprofile.numRows = iprofile.numRowsOriginal;
+    }
+
+    private void showApplyIconPackDialog(final String name) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.icon_pack_apply_warning_title);
+        builder.setMessage(getString(R.string.icon_pack_apply_warning_message));
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int whichButton) {
+                applyIconPack(name);
+                dialogInterface.dismiss();
+            }
+        })
+        .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        }).show();
+    }
+
+    private void applyIconPack(String name) {
+        String defaultName = getString(R.string.default_iconpack);
+        if (name == null) {
+            name = defaultName;
+        }
+
+        String currentPack = PreferenceManager.getDefaultSharedPreferences(this)
+                .getString(Utilities.KEY_ICON_PACK, defaultName);
+        if (!currentPack.equals(name)) {
+            LauncherAppState.getInstance(this).getIconsHandler().switchIconPacks(name);
+            mAdapter.notifyDataSetChanged();
+            setShouldReload(true);
+        }
     }
 
     private class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
@@ -210,18 +248,7 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
                     context.startActivity(intent);
                 } else {
                     String name = providers.get(position);
-                    String defaultName = context.getString(R.string.default_iconpack);
-                    if (name == null) {
-                        name = defaultName;
-                    }
-
-                    String currentPack = PreferenceManager.getDefaultSharedPreferences(context)
-                            .getString(Utilities.KEY_ICON_PACK, defaultName);
-                    if (!currentPack.equals(name)) {
-                        LauncherAppState.getInstance(context).getIconsHandler().switchIconPacks(name);
-                        notifyDataSetChanged();
-                        setShouldReload(true);
-                    }
+                    showApplyIconPackDialog(name);
                 }
             }
         }
