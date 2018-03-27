@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -16,6 +17,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -25,6 +27,7 @@ import com.android.launcher3.PreviewWorkspaceActivityBase;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.util.PackageManagerHelper;
+import com.android.launcher3.util.Themes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,6 +91,11 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
     }
 
     private void showApplyIconPackDialog(final String name) {
+        boolean dark = Themes.getAttrBoolean(this, R.attr.isMainColorDark);
+        int color = getColor(dark ? R.color.icon_edit_dialog_dark_background_color
+                : R.color.icon_edit_dialog_light_background_color);
+        ColorDrawable backgroundDrawable = new ColorDrawable(color);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.icon_pack_apply_warning_title);
         builder.setMessage(getString(R.string.icon_pack_apply_warning_message));
@@ -103,7 +111,15 @@ public class CustomIconPreview extends PreviewWorkspaceActivityBase {
             public void onClick(DialogInterface dialogInterface, int i) {
                 dialogInterface.dismiss();
             }
-        }).show();
+        });
+
+        AlertDialog dialog = builder.create();
+        Window dialogWindow = dialog.getWindow();
+        if (dialogWindow != null) {
+            dialogWindow.setBackgroundDrawable(backgroundDrawable);
+        }
+
+        dialog.show();
     }
 
     private void applyIconPack(String name) {
