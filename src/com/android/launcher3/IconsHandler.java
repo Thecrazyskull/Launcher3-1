@@ -396,7 +396,7 @@ public class IconsHandler {
         int h = drawable.getIntrinsicHeight();
 
         if (w <= 0 || h <= 0) {
-            Log.e(TAG, "drawable width or height invalid. Cannot convert to bitmap");
+            Log.d(TAG, "drawable width or height invalid. Cannot convert to bitmap");
             return null;
         }
 
