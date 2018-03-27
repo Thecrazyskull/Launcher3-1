@@ -18,6 +18,7 @@ package com.android.launcher3;
 
 import android.content.Context;
 import android.content.pm.LauncherActivityInfo;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
 public class CustomIconProvider extends IconProvider {
@@ -31,9 +32,18 @@ public class CustomIconProvider extends IconProvider {
 
     @Override
     public Drawable getIcon(LauncherActivityInfo info, int iconDpi, boolean flattenDrawable) {
-        Drawable drawable = LauncherAppState.getInstance(mContext)
-                .getIconsHandler().getIconFromHandler(info);
+        IconsHandler handler = LauncherAppState.getInstance(mContext)
+                .getIconsHandler();
 
+        IconCache cache = LauncherAppState.getInstance(mContext).getIconCache();
+
+        boolean hasCustomIcon = cache.hasCustomIcon(cache.getCacheEntry(info));
+        if (hasCustomIcon) {
+            return new BitmapDrawable(mContext.getResources(), cache.getNonNullIcon(
+                    cache.getCacheEntry(info), info.getUser()));
+        }
+
+        Drawable drawable = handler.getIconFromHandler(info);
         return drawable != null ? drawable : info.getIcon(iconDpi);
     }
 }

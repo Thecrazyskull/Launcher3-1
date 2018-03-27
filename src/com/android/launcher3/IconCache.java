@@ -83,6 +83,7 @@ public class IconCache {
         public CharSequence title = "";
         public CharSequence contentDescription = "";
         public boolean isLowResIcon;
+        public boolean hasCustomIcon;
     }
 
     private final HashMap<UserHandle, Bitmap> mDefaultIcons = new HashMap<>();
@@ -361,7 +362,8 @@ public class IconCache {
         mIconDb.clearDB(mIconDb.getDatabase());
     }
 
-    void addCustomInfoToDataBase(Drawable icon, ItemInfo info, CharSequence title) {
+    void addCustomInfoToDataBase(int customIcon,
+                                 Drawable icon, ItemInfo info, CharSequence title) {
         LauncherActivityInfo app = mLauncherApps.resolveActivity(info.getIntent(), info.user);
         final ComponentKey key = new ComponentKey(app.getComponentName(), app.getUser());
         CacheEntry entry = mCache.get(key);
@@ -378,6 +380,15 @@ public class IconCache {
         entry.icon = LauncherIcons.createIconBitmap(icon, mContext);
         entry.title = title != null ? title : app.getLabel();
         entry.contentDescription = mUserManager.getBadgedLabelForUser(entry.title, app.getUser());
+
+        // customIcon param has 3 states:
+        // 1. custom icon is applied
+        // 2. custom icon state unknown, don't update
+        // 3. no custom icon available
+        if (customIcon != 2) {
+            entry.hasCustomIcon = customIcon == 1;
+        }
+
         mCache.put(key, entry);
 
         Bitmap lowResIcon = generateLowResIcon(entry.icon);
@@ -464,6 +475,10 @@ public class IconCache {
 
     Bitmap getNonNullIcon(CacheEntry entry, UserHandle user) {
         return entry.icon == null ? getDefaultIcon(user) : entry.icon;
+    }
+
+    public boolean hasCustomIcon(CacheEntry entry) {
+        return entry != null && entry.hasCustomIcon;
     }
 
     /**

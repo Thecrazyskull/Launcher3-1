@@ -43,6 +43,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.launcher3.compat.LauncherAppsCompat;
 import com.android.launcher3.graphics.FixedScaleDrawable;
 import com.android.launcher3.graphics.LauncherIcons;
 import com.android.launcher3.graphics.IconNormalizer;
@@ -322,6 +323,7 @@ public class IconsHandler {
 
     private Drawable getDrawableIconForPackage(ComponentName componentName) {
         Drawable cachedIcon;
+
         if (!mBackImages.isEmpty()) {
             Drawable cachedIconFront = cacheGetDrawable(componentName.toString(), FRONT);
             Drawable cachedIconBack = cacheGetDrawable(componentName.toString(), BACK);

@@ -4009,7 +4009,7 @@ public class Launcher extends BaseActivity
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            mIconCache.addCustomInfoToDataBase(
+                            mIconCache.addCustomInfoToDataBase(2,
                                     new BitmapDrawable(res, appliedIcon), info, mEditText.getText());
                             mIconPackDialog.dismiss();
                         }
@@ -4018,7 +4018,7 @@ public class Launcher extends BaseActivity
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                mIconCache.addCustomInfoToDataBase(mIconsHandler
+                                mIconCache.addCustomInfoToDataBase(3, mIconsHandler
                                         .getResetIconDrawable(info), info, null);
                                 mIconPackDialog.dismiss();
                             }
