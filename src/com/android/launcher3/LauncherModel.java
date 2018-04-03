@@ -314,10 +314,12 @@ public class LauncherModel extends BroadcastReceiver
 
     @Override
     public void onPackageChanged(String packageName, UserHandle user) {
-        int op = PackageUpdatedTask.OP_UPDATE;
+        IconsHandler handler = LauncherAppState.getInstance(mApp.getContext()).getIconsHandler();
+
+        int op = handler.isDefaultIconPack() ? PackageUpdatedTask.OP_UPDATE
+                : PackageUpdatedTask.OP_UPDATE_KEEP_ICON;
         enqueueModelUpdateTask(new PackageUpdatedTask(op, user, packageName));
 
-        IconsHandler handler = LauncherAppState.getInstance(mApp.getContext()).getIconsHandler();
         String currentIconPack = handler.getCurrentIconPackPackageName();
 
         if (packageName.equals(currentIconPack)) {
