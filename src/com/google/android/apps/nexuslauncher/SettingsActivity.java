@@ -41,6 +41,12 @@ public class SettingsActivity extends com.android.launcher3.SettingsActivity imp
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        finish();
+    }
+
+    @Override
     public boolean onPreferenceStartFragment(PreferenceFragment preferenceFragment, Preference preference) {
         Fragment instantiate = Fragment.instantiate(this, preference.getFragment(), preference.getExtras());
         if (instantiate instanceof DialogFragment) {
