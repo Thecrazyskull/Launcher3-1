@@ -4,8 +4,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import com.android.launcher3.folder.FolderIcon;
+import com.android.launcher3.pageindicators.PageIndicator;
 import com.google.android.apps.nexuslauncher.NexusLauncherActivity;
 
 import java.util.ArrayList;
@@ -172,11 +174,27 @@ public class PreviewWorkspaceActivityBase extends NexusLauncherActivity {
 
     // Make sure to call super when overriding this method!
     public void loadViews() {
+        int hotseatMargin = getResources().getDimensionPixelSize(
+                R.dimen.qsb_hotseat_bottom_margin_hw);
+        int hotseatSize = getResources().getDimensionPixelSize(
+                R.dimen.dynamic_grid_hotseat_size);
+        int hotseatSpringSize = getResources().getDimensionPixelSize(
+                R.dimen.dynamic_grid_min_spring_loaded_space);
+        int hotseatPadding = hotseatSpringSize / 4;
+
         mRootView = LayoutInflater.from(this).inflate(R.layout.workspace_preview, null);
         mHotseat = mRootView.findViewById(R.id.hotseat);
 
         mWorkspace = mRootView.findViewById(R.id.workspace);
         mWorkspace.bindAndInitFirstWorkspaceScreen(null);
+
+        int marginBottom = ((hotseatMargin + hotseatSize) - hotseatSpringSize) + hotseatPadding;
+
+        PageIndicator pageIndicator = mRootView.findViewById(R.id.page_indicator);
+        pageIndicator.getCaretDrawable().setCaretProgress(-1f);
+        FrameLayout.LayoutParams pageIndicatorParams = (FrameLayout.LayoutParams)
+                pageIndicator.getLayoutParams();
+        pageIndicatorParams.bottomMargin = marginBottom;
 
         ArrayList<Long> array = new ArrayList<>();
         array.add(0L);

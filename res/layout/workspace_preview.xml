@@ -33,6 +33,14 @@
             android:layout_height="match_parent"
             android:layout_marginBottom="@dimen/preview_grid_cell_layout_padding"
             android:layout_gravity="center" />
+        <include layout="@layout/gradient_bg" />
+
+        <include layout="@layout/page_indicator"
+            android:id="@+id/page_indicator"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dynamic_grid_hotseat_size"
+            android:layout_gravity="center_horizontal|bottom" />
+
         <com.android.launcher3.Hotseat
             android:id="@+id/hotseat"
             android:layout_width="match_parent"
