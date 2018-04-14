@@ -14,10 +14,12 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.preference.SwitchPreference;
 import android.preference.TwoStatePreference;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 
@@ -27,6 +29,7 @@ public class SettingsActivity extends com.android.launcher3.SettingsActivity imp
     public final static String ENABLE_MINUS_ONE_PREF = "pref_enable_minus_one";
     public final static String SMARTSPACE_PREF = "pref_smartspace";
     public final static String APP_VERSION_PREF = "about_app_version";
+    public final static String ICON_BACK_SHAPE_PREF = "pref_icon_shape_back";
     private final static String GOOGLE_APP = "com.google.android.googlequicksearchbox";
 
     @Override
@@ -51,6 +54,7 @@ public class SettingsActivity extends com.android.launcher3.SettingsActivity imp
     public static class MySettingsFragment extends com.android.launcher3.SettingsActivity.LauncherSettingsFragment
             implements Preference.OnPreferenceChangeListener {
         private Context mContext;
+        private SwitchPreference mDrawAdaptiveBackPreference;
 
         @Override
         public void onCreate(Bundle bundle) {
@@ -79,6 +83,11 @@ public class SettingsActivity extends com.android.launcher3.SettingsActivity imp
             }
 
             findPreference(SHOW_PREDICTIONS_PREF).setOnPreferenceChangeListener(this);
+
+            mDrawAdaptiveBackPreference = (SwitchPreference) findPreference(ICON_BACK_SHAPE_PREF);
+            mDrawAdaptiveBackPreference.setOnPreferenceChangeListener(this);
+            mDrawAdaptiveBackPreference.setChecked(Utilities.getPrefs(getContext())
+                    .getBoolean(ICON_BACK_SHAPE_PREF, true));
 
             reloadIconPackSummary();
         }
@@ -134,6 +143,12 @@ public class SettingsActivity extends com.android.launcher3.SettingsActivity imp
                     SettingsActivity.SuggestionConfirmationFragment confirmationFragment = new SettingsActivity.SuggestionConfirmationFragment();
                     confirmationFragment.setTargetFragment(this, 0);
                     confirmationFragment.show(getFragmentManager(), preference.getKey());
+                    break;
+                case ICON_BACK_SHAPE_PREF:
+                    mDrawAdaptiveBackPreference.setChecked((boolean) newValue);
+
+                    LauncherAppState.getInstance(getContext()).getIconsHandler()
+                            .onIconPackUpdated();
                     break;
             }
             return false;

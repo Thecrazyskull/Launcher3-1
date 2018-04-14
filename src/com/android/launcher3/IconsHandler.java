@@ -37,17 +37,16 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Process;
 import android.preference.PreferenceManager;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
-import com.android.launcher3.compat.LauncherAppsCompat;
 import com.android.launcher3.graphics.FixedScaleDrawable;
 import com.android.launcher3.graphics.LauncherIcons;
 import com.android.launcher3.graphics.IconNormalizer;
+
+import com.google.android.apps.nexuslauncher.SettingsActivity;
 
 import org.xmlpull.v1.XmlPullParser;
 
@@ -247,6 +246,10 @@ public class IconsHandler {
         return mIconPackPackageName.equalsIgnoreCase(mDefaultIconPack);
     }
 
+    private boolean shouldDrawBackShape() {
+        return Utilities.getPrefs(mContext).getBoolean(SettingsActivity.ICON_BACK_SHAPE_PREF, true);
+    }
+
     public List<String> getMatchingDrawables(String packageName) {
         List<String> matchingDrawables = new ArrayList<>();
         ApplicationInfo info = null;
@@ -312,6 +315,14 @@ public class IconsHandler {
         }
 
         return generateAdaptiveIcon(componentName, drawable);
+    }
+
+    public void onIconPackUpdated() {
+        IconCache iconCache = LauncherAppState.getInstance(mContext)
+                .getIconCache();
+        iconCache.clearIconDataBase();
+        iconCache.flush();
+        LauncherAppState.getInstance(mContext).getModel().forceReload();
     }
 
     public void notifyUserIconPackChanged() {
@@ -410,8 +421,8 @@ public class IconsHandler {
 
     private Drawable generateAdaptiveIcon(ComponentName cn, Drawable drawable) {
         if (mBackImages.isEmpty()) {
-            // Make sure all icons are adaptive if no back is provided
-            if (!(drawable instanceof AdaptiveIconDrawable)) {
+            // Make sure all icons are adaptive if requested and no back image is provided
+            if (shouldDrawBackShape() && !(drawable instanceof AdaptiveIconDrawable)) {
                 Drawable d = createAdaptiveIcon(drawable);
                 if (d != null) {
                     return d;
@@ -631,11 +642,7 @@ public class IconsHandler {
         protected void onPostExecute(Void aVoid) {
             IconsHandler handler = handlerReference.get();
             if (handler != null) {
-                Context context = handler.mContext;
-
-                iconCache.clearIconDataBase();
-                iconCache.flush();
-                LauncherAppState.getInstance(context).getModel().forceReload();
+                handler.onIconPackUpdated();
             }
         }
     }

@@ -351,4 +351,7 @@
     <string name="icon_pack_updated">Your currently applied icon pack has been updated. It is recommended to go into settings and re-apply the icon pack.</string>
     <string name="icon_pack_apply_warning_title">Warning</string>
     <string name="icon_pack_apply_warning_message">Any custom icons or icon labels will disappear. Are you sure you want to continue?</string>
+    <string name="icon_shape_back_title">Always draw shape on non-adaptive icons</string>
+    <string name="icon_shape_back_summary">This will make non-adaptive icons adaptive by drawing a white shape behind the icon.</string>
+    <string name="icons">Icons</string>
 </resources>

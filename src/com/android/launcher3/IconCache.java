@@ -359,7 +359,7 @@ public class IconCache {
         return mCache.get(key);
     }
 
-    void clearIconDataBase() {
+    public void clearIconDataBase() {
         mIconDb.clearDB(mIconDb.getDatabase());
     }
 
