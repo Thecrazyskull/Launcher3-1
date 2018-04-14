@@ -75,7 +75,8 @@ public class IconsHandler {
         "com.teslacoilsw.launcher.THEME",
         "com.gau.go.launcherex.theme",
         "org.adw.launcher.THEMES",
-        "org.adw.launcher.icons.ACTION_PICK_ICON"
+        "org.adw.launcher.icons.ACTION_PICK_ICON",
+        "net.oneplus.launcher.icons.ACTION_PICK_ICON"
     };
 
     private Map<String, IconPackInfo> mIconPacks = new HashMap<>();
