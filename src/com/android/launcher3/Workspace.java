@@ -1378,7 +1378,8 @@ public class Workspace extends PagedView
 
     private void updatePageContentAlpha() {
         int screenCenter = getScrollX() + getViewportWidth() / 2;
-        for (int i = numCustomPages(); i < getChildCount(); i++) {
+        int N = getChildCount();
+        for (int i = numCustomPages(); i < N; i++) {
             CellLayout child = (CellLayout) getChildAt(i);
             if (child != null) {
                 float scrollProgress = getScrollProgress(screenCenter, child, i);
@@ -2017,6 +2018,9 @@ public class Workspace extends PagedView
 
         // Update the current state
         mState = toState;
+
+        // Update page content alpha
+        updatePageContentAlpha();
 
         // Create the animation to the new state
         AnimatorSet workspaceAnim =  mStateTransitionAnimation.getAnimationToState(fromState,
