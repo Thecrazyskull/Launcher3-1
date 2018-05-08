@@ -45,13 +45,9 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
@@ -79,22 +75,16 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.animation.OvershootInterpolator;
 import android.view.inputmethod.InputMethodManager;
-import android.view.ContextThemeWrapper;
 import android.widget.AdapterView;
-import android.widget.Advanceable;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListPopupWindow;
 import android.widget.TextView;
@@ -358,11 +348,7 @@ public class Launcher extends BaseActivity
     private boolean mRotationEnabled = false;
 
     // icon pack
-    private AlertDialog mIconPackDialog;
-    private EditText mEditText;
-    private ImageView mPackageIcon;
     private IconsHandler mIconsHandler;
-    private View mIconPackView;
 
     @Thunk void setOrientation() {
         if (mRotationEnabled) {
@@ -1778,10 +1764,6 @@ public class Launcher extends BaseActivity
             // Reset the widgets view
             if (!alreadyOnHome && mWidgetsView != null) {
                 mWidgetsView.scrollToTop();
-            }
-
-            if (mIconPackDialog != null) {
-                mIconPackDialog.dismiss();
             }
 
             if (mLauncherCallbacks != null) {
@@ -3937,18 +3919,10 @@ public class Launcher extends BaseActivity
         return mState == State.WORKSPACE && !mSharedPrefs.getBoolean(APPS_VIEW_SHOWN, false) && !um.isDemoUser();
     }
 
-    public void startEdit(final ItemInfo info, final ComponentName component) {
+    public void startEdit(final ImageView iconView, final ItemInfo info,
+                          final ComponentName component) {
         final LauncherActivityInfo app = LauncherAppsCompat.getInstance(this)
                 .resolveActivity(info.getIntent(), info.user);
-        mIconPackView = getLayoutInflater().inflate(R.layout.edit_dialog, null);
-        mPackageIcon = mIconPackView.findViewById(R.id.package_icon);
-        mEditText = mIconPackView.findViewById(R.id.editText);
-        mEditText.setText(mIconCache.getCacheEntry(app).title);
-
-        final Resources res = getResources();
-
-        final Bitmap appliedIcon = mIconsHandler.getAppliedIconBitmap(mIconCache, app, info);
-        mPackageIcon.setImageBitmap(appliedIcon);
 
         final int popupWidth = getResources().getDimensionPixelSize(R.dimen.edit_dialog_min_width);
         final Pair<List<String>, List<String>> iconPacks = mIconsHandler.getAllIconPacks();
@@ -3957,16 +3931,17 @@ public class Launcher extends BaseActivity
         final ListPopupWindow listPopupWindow = new ListPopupWindow(this);
         listPopupWindow.setAdapter(adapter);
         listPopupWindow.setWidth(popupWidth);
-        listPopupWindow.setAnchorView(mPackageIcon);
+        listPopupWindow.setAnchorView(iconView);
         listPopupWindow.setModal(true);
         listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                listPopupWindow.dismiss();
 
                 ChooseIconActivity.setItemInfo(info);
                 Intent intent = new Intent(Launcher.this, ChooseIconActivity.class);
                 intent.putExtra("app_package", component.getPackageName());
-                intent.putExtra("app_label", mEditText.getText().toString());
+                intent.putExtra("app_label", info.title);
                 intent.putExtra("icon_pack_package", iconPacks.first.get(position));
 
                 if (position == 0) {
@@ -3982,48 +3957,8 @@ public class Launcher extends BaseActivity
                 }
 
                 Launcher.this.startActivity(intent);
-                mIconPackDialog.dismiss();
             }
         });
-
-        mPackageIcon.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!iconPacks.second.isEmpty()) {
-                    listPopupWindow.show();
-                }
-            }
-        });
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setView(mIconPackView)
-                .setTitle(getString(R.string.edit_app))
-                .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        // reload workspace
-                        LauncherAppState.getInstance(getApplicationContext()).getModel().forceReload();
-                    }
-                })
-                .setPositiveButton(R.string.ok,
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            mIconCache.addCustomInfoToDataBase(2,
-                                    new BitmapDrawable(res, appliedIcon), info, mEditText.getText());
-                            mIconPackDialog.dismiss();
-                        }
-                })
-                .setNeutralButton(R.string.reset_icon,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                mIconCache.addCustomInfoToDataBase(3, mIconsHandler
-                                        .getResetIconDrawable(info), info, null);
-                                mIconPackDialog.dismiss();
-                            }
-                });
-        mIconPackDialog = builder.create();
 
         boolean dark = Themes.getAttrBoolean(this, R.attr.isMainColorDark);
         int color = getColor(dark ? R.color.icon_edit_dialog_dark_background_color
@@ -4032,12 +3967,9 @@ public class Launcher extends BaseActivity
 
         listPopupWindow.setBackgroundDrawable(backgroundDrawable);
 
-        Window dialogWindow = mIconPackDialog.getWindow();
-        if (dialogWindow != null) {
-            dialogWindow.setBackgroundDrawable(backgroundDrawable);
+        if (!iconPacks.second.isEmpty()) {
+            listPopupWindow.show();
         }
-
-        mIconPackDialog.show();
     }
 
     protected void moveWorkspaceToDefaultScreen() {
@@ -4214,6 +4146,9 @@ public class Launcher extends BaseActivity
 
             try {
                 String name = items.get(position);
+                int bgColor = mIconsHandler.getCurrentIconPackPackageName().equals(name)
+                        ? context.getColor(R.color.selected_icon_pack_color) : 0;
+                convertView.setBackgroundColor(bgColor);
 
                 // Default icon pack
                 if (position == 0 && name == null) {

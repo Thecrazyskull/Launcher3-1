@@ -296,6 +296,7 @@ public class ChooseIconActivity extends Activity {
                             if (info != null) {
                                 mIconCache.addCustomInfoToDataBase(1, icon, info,
                                         mCurrentPackageLabel);
+                                IconsHandler.updatePackage(v.getContext(), info);
                             }
                         }
                         ChooseIconActivity.this.finish();

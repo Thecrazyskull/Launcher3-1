@@ -20,27 +20,47 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
+import android.content.pm.LauncherActivityInfo;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.UserHandle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.launcher3.AppInfo;
+import com.android.launcher3.IconCache;
+import com.android.launcher3.IconsHandler;
 import com.android.launcher3.ItemInfo;
 import com.android.launcher3.Launcher;
+import com.android.launcher3.LauncherAppState;
+import com.android.launcher3.LauncherModel;
 import com.android.launcher3.R;
+import com.android.launcher3.compat.LauncherAppsCompat;
+import com.android.launcher3.shortcuts.DeepShortcutManager;
+import com.android.launcher3.shortcuts.ShortcutInfoCompat;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.ShortcutInfo;
-import com.android.launcher3.Utilities;
 import com.android.launcher3.widget.WidgetsBottomSheet;
+
+import java.util.List;
 
 public class CustomBottomSheet extends WidgetsBottomSheet {
     private FragmentManager mFragmentManager;
     private Launcher mLauncher;
+
+    private ItemInfo mCurrentItem;
+
+    private boolean mLabelChanged;
 
     public CustomBottomSheet(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -53,11 +73,85 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
     }
 
     @Override
-    public void populateAndShow(ItemInfo itemInfo) {
+    protected void handleClose(boolean animate) {
+        super.handleClose(animate);
+
+        if (mLabelChanged) {
+            IconsHandler.updatePackage(getContext(), mCurrentItem);
+
+            mCurrentItem = null;
+            mLabelChanged = false;
+        }
+    }
+
+    @Override
+    public void populateAndShow(final ItemInfo itemInfo) {
         super.populateAndShow(itemInfo);
-        ((TextView) findViewById(R.id.title)).setText(itemInfo.title);
+
+        final LauncherActivityInfo app = LauncherAppsCompat.getInstance(getContext())
+                .resolveActivity(itemInfo.getIntent(), itemInfo.user);
+        final IconsHandler handler = LauncherAppState.getInstance(getContext()).getIconsHandler();
+        final IconCache cache = LauncherAppState.getInstance(getContext()).getIconCache();
+        final Bitmap appliedIcon = handler.getAppliedIconBitmap(cache, app, itemInfo);
+
+        final ImageView appIcon = findViewById(R.id.app_icon);
+        final EditText title = findViewById(R.id.title);
+        final TextView reset = findViewById(R.id.reset);
+
+        mCurrentItem = itemInfo;
+
+        appIcon.setImageBitmap(appliedIcon);
+        appIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ComponentName componentName = null;
+                if (itemInfo instanceof AppInfo) {
+                    componentName = ((AppInfo) itemInfo).componentName;
+                } else if (itemInfo instanceof ShortcutInfo) {
+                    componentName = ((ShortcutInfo) itemInfo).intent.getComponent();
+                }
+
+                if (componentName != null) {
+                    mLauncher.startEdit((ImageView) v, itemInfo, componentName);
+                }
+            }
+        });
+
+        reset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Drawable resetDrawable = handler.getResetIconDrawable(itemInfo);
+
+                title.setText(app.getLabel());
+                appIcon.setImageDrawable(resetDrawable);
+
+                cache.addCustomInfoToDataBase(3, resetDrawable, itemInfo, null);
+                setLabelChanged();
+            }
+        });
+
+        title.setText(itemInfo.title);
+        title.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // unused
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // unused
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                cache.addCustomInfoToDataBase(2,
+                        new BitmapDrawable(getContext().getResources(), appliedIcon),
+                        itemInfo, title.getText());
+                setLabelChanged();
+            }
+        });
         ((PrefsFragment) mFragmentManager.findFragmentById(R.id.sheet_prefs))
-                .loadForApp(this, mLauncher, itemInfo);
+                .loadForApp(itemInfo);
     }
 
     @Override
@@ -73,14 +167,12 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
     protected void onWidgetsBound() {
     }
 
-    public void setLauncher(Launcher launcher) {
-        mLauncher = launcher;
+    private void setLabelChanged() {
+        mLabelChanged = true;
     }
 
     public static class PrefsFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener {
-        private final static String PREF_PACK = "pref_app_icon_pack";
         private final static String PREF_HIDE = "pref_app_hide";
-        private Preference mPrefPack;
         private SwitchPreference mPrefHide;
 
         private ComponentKey mKey;
@@ -91,44 +183,11 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
             addPreferencesFromResource(R.xml.app_edit_prefs);
         }
 
-        public void loadForApp(final CustomBottomSheet sheet, final Launcher launcher,
-                               final ItemInfo itemInfo) {
+        public void loadForApp(final ItemInfo itemInfo) {
             Context context = getActivity();
             mKey = new ComponentKey(itemInfo.getTargetComponent(), itemInfo.user);
 
-            mPrefPack = findPreference(PREF_PACK);
             mPrefHide = (SwitchPreference) findPreference(PREF_HIDE);
-
-            PackageManager pm = context.getPackageManager();
-
-            String defaultPack = context.getString(R.string.default_iconpack);
-            String iconPack = PreferenceManager.getDefaultSharedPreferences(getActivity())
-                    .getString(Utilities.KEY_ICON_PACK, defaultPack);
-
-            try {
-                ApplicationInfo info = pm.getApplicationInfo(iconPack, 0);
-                mPrefPack.setSummary(pm.getApplicationLabel(info));
-            } catch (PackageManager.NameNotFoundException e) {
-                mPrefPack.setSummary(defaultPack);
-            }
-
-            mPrefPack.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    sheet.close(true);
-                    ComponentName componentName = null;
-                    if (itemInfo instanceof com.android.launcher3.AppInfo) {
-                        componentName = ((com.android.launcher3.AppInfo) itemInfo).componentName;
-                    } else if (itemInfo instanceof ShortcutInfo) {
-                        componentName = ((ShortcutInfo) itemInfo).intent.getComponent();
-                    }
-
-                    if (componentName != null) {
-                        launcher.startEdit(itemInfo, componentName);
-                    }
-                    return false;
-                }
-            });
 
             mPrefHide.setChecked(CustomAppFilter.isHiddenApp(context, mKey));
             mPrefHide.setOnPreferenceChangeListener(this);
@@ -139,10 +198,6 @@ public class CustomBottomSheet extends WidgetsBottomSheet {
             boolean enabled = (boolean) newValue;
             Launcher launcher = Launcher.getLauncher(getActivity());
             switch (preference.getKey()) {
-                case PREF_PACK:
-                    CustomIconProvider.setAppState(launcher, mKey, enabled);
-                    CustomIconUtils.reloadIconByKey(launcher, mKey);
-                    break;
                 case PREF_HIDE:
                     CustomAppFilter.setComponentNameState(launcher, mKey, enabled);
                     break;

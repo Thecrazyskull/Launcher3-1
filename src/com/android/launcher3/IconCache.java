@@ -363,7 +363,7 @@ public class IconCache {
         mIconDb.clearDB(mIconDb.getDatabase());
     }
 
-    void addCustomInfoToDataBase(int customIcon,
+    public void addCustomInfoToDataBase(int customIcon,
                                  Drawable icon, ItemInfo info, CharSequence title) {
         LauncherActivityInfo app = mLauncherApps.resolveActivity(info.getIntent(), info.user);
         final ComponentKey key = new ComponentKey(app.getComponentName(), app.getUser());

@@ -37,6 +37,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.UserHandle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Pair;
@@ -46,6 +47,8 @@ import com.android.launcher3.graphics.FixedScaleDrawable;
 import com.android.launcher3.graphics.LauncherIcons;
 import com.android.launcher3.graphics.IconNormalizer;
 
+import com.android.launcher3.shortcuts.DeepShortcutManager;
+import com.android.launcher3.shortcuts.ShortcutInfoCompat;
 import com.google.android.apps.nexuslauncher.SettingsActivity;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -373,17 +376,35 @@ public class IconsHandler {
     }
 
     // Get the first icon pack parsed icon for reset purposes
-    Drawable getResetIconDrawable(ItemInfo info) {
+    public Drawable getResetIconDrawable(ItemInfo info) {
         return getDrawableIconForPackage(info.getTargetComponent());
     }
 
     // Get the applied icon
-    Bitmap getAppliedIconBitmap(IconCache iconCache, LauncherActivityInfo app,
+    public Bitmap getAppliedIconBitmap(IconCache iconCache, LauncherActivityInfo app,
                                 ItemInfo info) {
         final Drawable defaultIcon = new BitmapDrawable(mContext.getResources(),
                 iconCache.getNonNullIcon(iconCache.getCacheEntry(app), info.user));
         return LauncherIcons.createBadgedIconBitmap(defaultIcon, info.user, mContext,
                 Build.VERSION.SDK_INT);
+    }
+
+    public static void updatePackage(Context context, ItemInfo info) {
+        if (info == null) {
+            return;
+        }
+
+        LauncherModel model = LauncherAppState.getInstance(context).getModel();
+        DeepShortcutManager shortcutManager = DeepShortcutManager.getInstance(context);
+
+        String pkg = info.getTargetComponent().getPackageName();
+        UserHandle user = info.user;
+
+        model.onPackageChanged(pkg, user);
+        List<ShortcutInfoCompat> shortcuts = shortcutManager.queryForPinnedShortcuts(pkg, user);
+        if (!shortcuts.isEmpty()) {
+            model.updatePinnedShortcuts(pkg, shortcuts, user);
+        }
     }
 
     private Drawable createAdaptiveIcon(Drawable drawable) {
@@ -609,14 +630,12 @@ public class IconsHandler {
     }
 
     private static class IconPackLoader extends AsyncTask<Void, Void, Void> {
-        private IconCache iconCache;
         private String iconPackPackageName;
         private WeakReference<IconsHandler> handlerReference;
 
         private IconPackLoader(IconsHandler handler, String packageName) {
-            handlerReference = new WeakReference<IconsHandler>(handler);
+            handlerReference = new WeakReference<>(handler);
             iconPackPackageName = packageName;
-            iconCache = LauncherAppState.getInstance(handler.mContext).getIconCache();
         }
 
         @Override
