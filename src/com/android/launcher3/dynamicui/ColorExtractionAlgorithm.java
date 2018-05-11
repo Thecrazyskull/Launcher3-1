@@ -181,7 +181,7 @@ public class ColorExtractionAlgorithm {
     private boolean isBlacklisted(float[] hsl) {
         for (ColorRange badRange: BLACKLISTED_COLORS) {
             if (badRange.containsColor(hsl[0], hsl[1], hsl[2])) {
-                return true;
+                return false;
             }
         }
         return false;
@@ -286,6 +286,12 @@ public class ColorExtractionAlgorithm {
 
     private static float fract(float v) {
         return v - (float) Math.floor(v);
+    }
+
+    public static boolean isColorDark(int color) {
+        double darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color)
+                + 0.114 * Color.blue(color)) / 255;
+        return darkness >= 0.5;
     }
 
     static class TonalPalette {

@@ -141,8 +141,8 @@ public class GradientView extends View implements WallpaperColorInfo.OnChangeLis
                 Shader.TileMode.CLAMP);
         mPaintNoScrim.setShader(shaderNoScrim);
 
-        int color1 = ColorUtils.compositeColors(mScrimColor,mColor1);
-        int color2 = ColorUtils.compositeColors(mScrimColor,mColor2);
+        int color1 = ColorUtils.compositeColors(mColor1,mScrimColor);
+        int color2 = ColorUtils.compositeColors(mColor2,mScrimColor);
         RadialGradient shaderWithScrim = new RadialGradient(
                 mWidth * 0.5f,
                 mHeight * gradientCenterY,
