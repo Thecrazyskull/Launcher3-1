@@ -29,6 +29,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
 import android.os.UserHandle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
@@ -313,13 +314,31 @@ public class LauncherModel extends BroadcastReceiver
 
     @Override
     public void onPackageChanged(String packageName, UserHandle user) {
-        int op = PackageUpdatedTask.OP_UPDATE;
+        IconsHandler handler = LauncherAppState.getInstance(mApp.getContext()).getIconsHandler();
+
+        int op = handler.isDefaultIconPack() ? PackageUpdatedTask.OP_UPDATE
+                : PackageUpdatedTask.OP_UPDATE_KEEP_ICON;
         enqueueModelUpdateTask(new PackageUpdatedTask(op, user, packageName));
+
+        String currentIconPack = handler.getCurrentIconPackPackageName();
+
+        if (packageName.equals(currentIconPack)) {
+            handler.notifyUserIconPackChanged();
+        }
     }
 
     @Override
     public void onPackageRemoved(String packageName, UserHandle user) {
         onPackagesRemoved(user, packageName);
+        Context context = mApp.getContext();
+        String defaultIconPack = context.getString(R.string.default_iconpack);
+
+        //switch to default icon pack if the applied one is removed
+        if (PreferenceManager.getDefaultSharedPreferences(context).getString(
+                Utilities.KEY_ICON_PACK, defaultIconPack).equals(packageName)) {
+            LauncherAppState.getInstance(mApp.getContext()).getIconsHandler()
+                    .switchIconPacks(defaultIconPack);
+        }
     }
 
     public void onPackagesRemoved(UserHandle user, String... packages) {

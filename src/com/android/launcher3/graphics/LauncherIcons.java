@@ -99,7 +99,6 @@ public class LauncherIcons {
      */
     public static Bitmap createBadgedIconBitmap(
             Drawable icon, UserHandle user, Context context, int iconAppTargetSdk) {
-
         IconNormalizer normalizer;
         float scale = 1f;
         if (!FeatureFlags.LAUNCHER3_DISABLE_ICON_NORMALIZATION) {
@@ -110,8 +109,8 @@ public class LauncherIcons {
                         context.getDrawable(R.drawable.adaptive_icon_drawable_wrapper).mutate();
                 dr.setBounds(0, 0, 1, 1);
                 scale = normalizer.getScale(icon, null, dr.getIconMask(), outShape);
-                if (FeatureFlags.LEGACY_ICON_TREATMENT &&
-                        !outShape[0]){
+                if ((FeatureFlags.LEGACY_ICON_TREATMENT)
+                        && !outShape[0]){
                     Drawable wrappedIcon = wrapToAdaptiveIconDrawable(context, icon, scale);
                     if (wrappedIcon != icon) {
                         icon = wrappedIcon;
@@ -295,8 +294,8 @@ public class LauncherIcons {
      * shrink the legacy icon and set it as foreground. Use color drawable as background to
      * create AdaptiveIconDrawable.
      */
-    static Drawable wrapToAdaptiveIconDrawable(Context context, Drawable drawable, float scale) {
-        if (!(FeatureFlags.LEGACY_ICON_TREATMENT && Utilities.ATLEAST_OREO)) {
+    public static Drawable wrapToAdaptiveIconDrawable(Context context, Drawable drawable, float scale) {
+        if (!Utilities.ATLEAST_OREO) {
             return drawable;
         }
 

@@ -25,10 +25,7 @@ public class CustomAppFilter extends NexusAppFilter {
 
     @Override
     public boolean shouldShowApp(ComponentName componentName, UserHandle user) {
-        if (CustomIconUtils.usingValidPack(mContext)) {
-            return !isHiddenApp(mContext, new ComponentKey(componentName, user));
-        }
-        return super.shouldShowApp(componentName, user);
+        return !isHiddenApp(mContext, new ComponentKey(componentName, user));
     }
 
     static void resetAppFilter(Context context) {
@@ -43,7 +40,7 @@ public class CustomAppFilter extends NexusAppFilter {
         while (hiddenApps.contains(comp)) {
             hiddenApps.remove(comp);
         }
-        if (hidden != CustomIconUtils.isPackProvider(context, key.componentName.getPackageName())) {
+        if (hidden) {
             hiddenApps.add(comp);
         }
         setHiddenApps(context, hiddenApps);
@@ -55,7 +52,7 @@ public class CustomAppFilter extends NexusAppFilter {
     }
 
     static boolean isHiddenApp(Context context, ComponentKey key) {
-        return getHiddenApps(context).contains(key.toString()) != CustomIconUtils.isPackProvider(context, key.componentName.getPackageName());
+        return getHiddenApps(context).contains(key.toString());
     }
 
     private static Set<String> getHiddenApps(Context context) {

@@ -42,10 +42,13 @@ import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -62,6 +65,7 @@ import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.method.TextKeyListener;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Display;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -79,6 +83,11 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.animation.OvershootInterpolator;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.ListPopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.launcher3.DropTarget.DragObject;
@@ -86,6 +95,7 @@ import com.android.launcher3.LauncherSettings.Favorites;
 import com.android.launcher3.Workspace.ItemOperator;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
 import com.android.launcher3.allapps.AllAppsContainerView;
+import com.android.launcher3.allapps.AllAppsRecyclerView;
 import com.android.launcher3.allapps.AllAppsTransitionController;
 import com.android.launcher3.anim.AnimationLayerSet;
 import com.android.launcher3.compat.AppWidgetManagerCompat;
@@ -337,6 +347,9 @@ public class Launcher extends BaseActivity
     public ViewGroupFocusHelper mFocusHandler;
     private boolean mRotationEnabled = false;
 
+    // icon pack
+    private IconsHandler mIconsHandler;
+
     @Thunk void setOrientation() {
         if (mRotationEnabled) {
             unlockScreenOrientation(true);
@@ -426,6 +439,8 @@ public class Launcher extends BaseActivity
                 .addAccessibilityStateChangeListener(this);
 
         lockAllApps();
+
+        mIconsHandler = LauncherAppState.getInstance(this).getIconsHandler();
 
         restoreState(savedInstanceState);
 
@@ -3904,6 +3919,59 @@ public class Launcher extends BaseActivity
         return mState == State.WORKSPACE && !mSharedPrefs.getBoolean(APPS_VIEW_SHOWN, false) && !um.isDemoUser();
     }
 
+    public void startEdit(final ImageView iconView, final ItemInfo info,
+                          final ComponentName component) {
+        final LauncherActivityInfo app = LauncherAppsCompat.getInstance(this)
+                .resolveActivity(info.getIntent(), info.user);
+
+        final int popupWidth = getResources().getDimensionPixelSize(R.dimen.edit_dialog_min_width);
+        final Pair<List<String>, List<String>> iconPacks = mIconsHandler.getAllIconPacks();
+        final IconPackArrayAdapter adapter = new IconPackArrayAdapter(this,
+                iconPacks.first);
+        final ListPopupWindow listPopupWindow = new ListPopupWindow(this);
+        listPopupWindow.setAdapter(adapter);
+        listPopupWindow.setWidth(popupWidth);
+        listPopupWindow.setAnchorView(iconView);
+        listPopupWindow.setModal(true);
+        listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                listPopupWindow.dismiss();
+
+                ChooseIconActivity.setItemInfo(info);
+                Intent intent = new Intent(Launcher.this, ChooseIconActivity.class);
+                intent.putExtra("app_package", component.getPackageName());
+                intent.putExtra("app_label", info.title);
+                intent.putExtra("icon_pack_package", iconPacks.first.get(position));
+
+                if (position == 0) {
+                    List<AppInfo> defaultAppInfos = ((AllAppsRecyclerView) mAppsView
+                            .getTouchDelegateTargetView()).getApps().getApps();
+                    ArrayList<String> currentPackageNames = new ArrayList<>();
+                    for (AppInfo info : defaultAppInfos) {
+                        String pkgName = info.getTargetComponent().getPackageName();
+                        currentPackageNames.add(pkgName);
+                    }
+
+                    intent.putExtra("default_apps_infos", currentPackageNames);
+                }
+
+                Launcher.this.startActivity(intent);
+            }
+        });
+
+        boolean dark = Themes.getAttrBoolean(this, R.attr.isMainColorDark);
+        int color = getColor(dark ? R.color.icon_edit_dialog_dark_background_color
+                : R.color.icon_edit_dialog_light_background_color);
+        ColorDrawable backgroundDrawable = new ColorDrawable(color);
+
+        listPopupWindow.setBackgroundDrawable(backgroundDrawable);
+
+        if (!iconPacks.second.isEmpty()) {
+            listPopupWindow.show();
+        }
+    }
+
     protected void moveWorkspaceToDefaultScreen() {
         mWorkspace.moveToDefaultScreen(false);
     }
@@ -4029,6 +4097,80 @@ public class Launcher extends BaseActivity
             return (Launcher) context;
         }
         return ((Launcher) ((ContextWrapper) context).getBaseContext());
+    }
+
+    private class IconPackArrayAdapter extends BaseAdapter {
+        private Context context;
+        private List<String> items;
+
+        IconPackArrayAdapter(Context context, List<String> items) {
+            this.context = context;
+            this.items = items;
+
+            // Add default icon pack
+            items.add(0, null);
+        }
+
+        @Override
+        public int getCount() {
+            return items.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return position;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+            if (convertView == null) {
+                LayoutInflater inflater = LayoutInflater.from(context);
+
+                convertView = inflater.inflate(R.layout.edit_dialog_item, null);
+                holder = new ViewHolder();
+                holder.title = convertView.findViewById(R.id.app_title);
+                holder.icon = convertView.findViewById(R.id.app_icon);
+
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+
+            PackageManager pm = context.getPackageManager();
+
+            try {
+                String name = items.get(position);
+                int bgColor = mIconsHandler.getCurrentIconPackPackageName().equals(name)
+                        ? context.getColor(R.color.selected_icon_pack_color) : 0;
+                convertView.setBackgroundColor(bgColor);
+
+                // Default icon pack
+                if (position == 0 && name == null) {
+                    holder.icon.setImageResource(R.drawable.ic_framework_colored);
+                    holder.title.setText(R.string.icon_pack_default);
+                } else {
+                    Drawable appIcon = pm.getApplicationIcon(name);
+                    ApplicationInfo info = pm.getApplicationInfo(name, 0);
+
+                    holder.icon.setImageDrawable(appIcon);
+                    holder.title.setText(pm.getApplicationLabel(info));
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+            }
+
+            return convertView;
+        }
+
+        private class ViewHolder {
+            private TextView title;
+            private ImageView icon;
+        }
     }
 
     private class RotationPrefChangeHandler implements OnSharedPreferenceChangeListener {
